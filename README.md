@@ -17,7 +17,11 @@ def deps do
 end
 ```
 
-Documentation can be found at https://hexdocs.pm/ex_aws.
+## Documentation
+
+* [ex_aws](https://hexdocs.pm/ex_aws)
+* [AWS CodeDeploy API](https://docs.aws.amazon.com/codedeploy/latest/APIReference/API_ListApplications.html)
+* [Go API for CodeDeploy](https://github.com/aws/aws-sdk-go/blob/master/models/apis/codedeploy/2014-10-06/api-2.json)
 
 ## License
 
