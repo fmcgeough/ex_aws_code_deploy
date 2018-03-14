@@ -123,15 +123,16 @@ defmodule ExAws.CodeDeploy do
           {"content-type", "application/x-amz-json-1.1"}
         ]
   """
-  @type deployment_options :: [
+  @type time_range :: %{optional(binary) => binary}
+  @type list_deployments_options :: [
           application_name: binary,
           deployment_group_name: binary,
           include_only_statuses: [binary, ...],
-          create_time_range: %{start: binary, end: binary},
+          create_time_range: map(),
           next_token: binary
         ]
   @spec list_deployments() :: ExAws.Operation.JSON.t()
-  @spec list_deployments(opts :: deployment_options) :: ExAws.Operation.JSON.t()
+  @spec list_deployments(opts :: list_deployments_options) :: ExAws.Operation.JSON.t()
   def list_deployments(opts \\ []) do
     opts |> camelize_keys(spec: @key_spec) |> request(:list_deployments)
   end
