@@ -39,6 +39,15 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
+    Gets information about one or more applications.
+  """
+  @spec batch_get_applications([binary, ...]) :: ExAws.Operation.JSON.t()
+  def batch_get_applications(app_names) when is_list(app_names) do
+    %{"applicationNames" => app_names}
+    |> request(:batch_get_applications)
+  end
+
+  @doc """
     Lists the deployment configurations with the applicable IAM user or AWS account.
 
   ## Examples:
