@@ -35,7 +35,7 @@ defmodule AppInfo do
   ]
 
   def new(response) do
-    create_time = Map.get(response, "createTime") |> Kernel.trunc() |> DateTime.from_unix()
+    create_time = Map.get(response, "createTime") |> Kernel.trunc() |> DateTime.from_unix!()
 
     %AppInfo{
       app_id: Map.get(response, "applicationId"),
