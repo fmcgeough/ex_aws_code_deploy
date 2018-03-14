@@ -23,6 +23,29 @@ defmodule DeploymentInfo do
   end
 end
 
+defmodule AppInfo do
+  alias __MODULE__
+
+  defstruct [
+    :app_id,
+    :app_name,
+    :compute_platform,
+    :create_time,
+    :linked_to_github
+  ]
+
+  def new(response) do
+    create_time = Map.get(response, "createTime") |> Kernel.trunc() |> DateTime.from_unix()
+
+    %AppInfo{
+      app_id: Map.get(response, "applicationId"),
+      app_name: Map.get(response, "applicationName"),
+      compute_platform: Map.get(response, "computePlatform"),
+      create_time: create_time
+    }
+  end
+end
+
 defmodule IExHelpers do
   @num_secs_in_day 86_400
 
@@ -55,6 +78,7 @@ defmodule IExHelpers do
     |> Enum.chunk_every(100)
     |> Enum.map(fn app_names -> batch_get_applications(keys, app_names) end)
     |> List.flatten()
+    |> Enum.map(fn app_info -> AppInfo.new(app_info) end)
   end
 
   def batch_get_applications(keys, app_names) do
