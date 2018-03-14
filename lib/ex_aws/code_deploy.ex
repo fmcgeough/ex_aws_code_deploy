@@ -57,6 +57,18 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
+    Gets information about one or more instance that are part of a deployment group.
+
+    You can use `list_deployment_instances/1` to get a list of instances
+    deployed to by a deployment_id but you need this function get details on
+    the instances like startTime, endTime, lastUpdatedAt and instanceType.
+  """
+  def batch_get_deployment_instances(deployment_id, instance_ids) when is_list(instance_ids) do
+    %{"deploymentId" => deployment_id, "instanceIds" => instance_ids}
+    |> request(:batch_get_deployment_instances)
+  end
+
+  @doc """
     Lists the deployment configurations with the applicable IAM user or AWS account.
 
   ## Examples:
