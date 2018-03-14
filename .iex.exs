@@ -1,3 +1,28 @@
+defmodule DeploymentInfo do
+  alias __MODULE__
+
+  defstruct [
+    :application_name,
+    :status,
+    :deployment_config_name,
+    :deployment_group_name,
+    :deployment_id
+  ]
+
+  def new(response) do
+    [
+      {"applicationName", :application_name},
+      {"status", :status},
+      {"deploymentConfigName", :deployment_config_name},
+      {"deploymentGroupName", :deployment_group_name},
+      {"deploymentId", :deployment_id}
+    ]
+    |> Enum.reduce(%DeploymentInfo{}, fn {field_name, struct_key}, acc ->
+      Map.put(acc, struct_key, get_in(response, [field_name]))
+    end)
+  end
+end
+
 defmodule IExHelpers do
   @num_secs_in_day 86_400
 
@@ -21,6 +46,22 @@ defmodule IExHelpers do
     |> ExAws.request(keys)
     |> case do
       {:ok, %{"applications" => apps}} -> apps
+      result -> result
+    end
+  end
+
+  def list_info_on_applications(keys) do
+    list_applications(keys)
+    |> Enum.chunk_every(100)
+    |> Enum.map(fn app_names -> batch_get_applications(keys, app_names) end)
+    |> List.flatten()
+  end
+
+  def batch_get_applications(keys, app_names) do
+    ExAws.CodeDeploy.batch_get_applications(app_names)
+    |> ExAws.request(keys)
+    |> case do
+      {:ok, %{"applicationsInfo" => apps_info}} -> apps_info
       result -> result
     end
   end
@@ -57,6 +98,15 @@ defmodule IExHelpers do
     |> ExAws.request(keys)
     |> case do
       {:ok, %{"instancesList" => instances}} -> instances
+      result -> result
+    end
+  end
+
+  def get_deployment(keys, deployment_id) do
+    ExAws.CodeDeploy.get_deployment(deployment_id)
+    |> ExAws.request(keys)
+    |> case do
+      {:ok, %{"deploymentInfo" => deployment_info}} -> deployment_info
       result -> result
     end
   end
