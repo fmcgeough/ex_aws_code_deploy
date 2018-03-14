@@ -99,6 +99,15 @@ defmodule IExHelpers do
     end)
   end
 
+  def batch_get_deployments(keys, deployment_ids) do
+    ExAws.CodeDeploy.batch_get_deployments(deployment_ids)
+    |> ExAws.request(keys)
+    |> case do
+      {:ok, %{"deploymentsInfo" => deployments_info}} -> deployments_info
+      result -> result
+    end
+  end
+
   def list_deployment_groups(keys, app) do
     ExAws.CodeDeploy.list_deployment_groups(app)
     |> ExAws.request(keys)
@@ -118,7 +127,10 @@ defmodule IExHelpers do
   end
 
   def list_deployment_instances(keys, deployment_id) do
-    ExAws.CodeDeploy.list_deployment_instances(deployment_id)
+    ExAws.CodeDeploy.list_deployment_instances(
+      deployment_id,
+      instance_status_filter: ["Succeeded"]
+    )
     |> ExAws.request(keys)
     |> case do
       {:ok, %{"instancesList" => instances}} -> instances

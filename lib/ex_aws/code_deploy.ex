@@ -48,6 +48,15 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
+    Gets information about one or more deployments.
+  """
+  @spec batch_get_deployments([binary, ...]) :: ExAws.Operation.JSON.t()
+  def batch_get_deployments(deployment_ids) when is_list(deployment_ids) do
+    %{"deploymentIds" => deployment_ids}
+    |> request(:batch_get_deployments)
+  end
+
+  @doc """
     Lists the deployment configurations with the applicable IAM user or AWS account.
 
   ## Examples:
