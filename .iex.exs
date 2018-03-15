@@ -47,30 +47,28 @@ defmodule AppInfo do
 end
 
 defmodule IExHelpers do
-  @num_secs_in_day 86_400
+  @begin_of_day "T00:00:00.0Z"
+  @end_of_day "T23:59:59.0Z"
 
-  def list_deployments_since_yesterday(keys) do
-    start =
-      NaiveDateTime.utc_now()
-      |> NaiveDateTime.add(-1 * @num_secs_in_day)
-      |> DateTime.from_naive!("Etc/UTC")
-      |> DateTime.to_unix(:second)
+  @doc """
+    List all deployments for a date
+  """
+  def list_deployments_yesterday(keys) do
+    list_deployments_for_date(keys, yesterday())
+  end
 
-    ExAws.CodeDeploy.list_deployments(create_time_range: %{"start" => start, "end" => nil})
-    |> ExAws.request(keys)
+  def list_deployments_for_date(keys, dt) do
+    dt
+    |> day_range()
     |> case do
-      {:ok, %{"deployments" => deployments}} -> deployments
-      result -> result
+      {:ok, dt1, dt2} -> list_deployments_for_date(keys, dt1, dt2)
+      {:error, _, _} -> []
     end
   end
 
   def list_applications(keys) do
-    ExAws.CodeDeploy.list_applications()
-    |> ExAws.request(keys)
-    |> case do
-      {:ok, %{"applications" => apps}} -> apps
-      result -> result
-    end
+    apps = inner_list_applications(keys)
+    list_more_applications(keys, apps["applications"], apps["nextToken"])
   end
 
   def list_info_on_applications(keys) do
@@ -81,22 +79,25 @@ defmodule IExHelpers do
     |> Enum.map(fn app_info -> AppInfo.new(app_info) end)
   end
 
-  def batch_get_applications(keys, app_names) do
-    ExAws.CodeDeploy.batch_get_applications(app_names)
-    |> ExAws.request(keys)
-    |> case do
-      {:ok, %{"applicationsInfo" => apps_info}} -> apps_info
-      result -> result
-    end
-  end
+  @doc """
+    List all Deployment Groups for an app.
 
-  def list_all_deployment_groups(keys, throttle_ms) do
-    list_applications(keys)
-    |> Enum.map(fn app ->
-      val = list_deployment_groups(keys, app)
-      :timer.sleep(throttle_ms)
-      val
-    end)
+    Returned value from API.
+    {
+    "applicationName": "string",
+    "deploymentGroups": [ "string" ],
+    "nextToken": "string"
+    }
+  """
+  def list_deployment_groups(keys, app) do
+    deploy_groups = inner_list_deployment_groups(keys, app)
+
+    list_more_deployment_groups(
+      keys,
+      app,
+      deploy_groups["deploymentGroups"],
+      deploy_groups["nextToken"]
+    )
   end
 
   def batch_get_deployments(keys, deployment_ids) do
@@ -108,17 +109,8 @@ defmodule IExHelpers do
     end
   end
 
-  def list_deployment_groups(keys, app) do
-    ExAws.CodeDeploy.list_deployment_groups(app)
-    |> ExAws.request(keys)
-    |> case do
-      {:ok, result} -> result
-      result -> result
-    end
-  end
-
   def list_deployment_instances_since_yesterday(keys, throttle_ms) do
-    list_deployments_since_yesterday(keys)
+    list_deployments_yesterday(keys)
     |> Enum.map(fn deployment_id ->
       val = list_deployment_instances(keys, deployment_id)
       :timer.sleep(throttle_ms)
@@ -127,15 +119,14 @@ defmodule IExHelpers do
   end
 
   def list_deployment_instances(keys, deployment_id) do
-    ExAws.CodeDeploy.list_deployment_instances(
+    instances = inner_list_deployment_instances(keys, deployment_id)
+
+    list_more_deployment_instances(
+      keys,
       deployment_id,
-      instance_status_filter: ["Succeeded"]
+      instances["instancesList"],
+      instances["nextToken"]
     )
-    |> ExAws.request(keys)
-    |> case do
-      {:ok, %{"instancesList" => instances}} -> instances
-      result -> result
-    end
   end
 
   def get_deployment(keys, deployment_id) do
@@ -144,6 +135,173 @@ defmodule IExHelpers do
     |> case do
       {:ok, %{"deploymentInfo" => deployment_info}} -> deployment_info
       result -> result
+    end
+  end
+
+  defp inner_list_deployment_instances(keys, deployment_id) do
+    ExAws.CodeDeploy.list_deployment_instances(deployment_id)
+    |> ExAws.request(keys)
+    |> case do
+      {:ok, instances} -> instances
+      _ -> %{"instancesList" => []}
+    end
+  end
+
+  defp list_more_deployment_instances(_keys, _deployment_id, acc, nil), do: acc
+
+  defp list_more_deployment_instances(keys, deployment_id, acc, next_token) do
+    instances = inner_list_more_deployment_instances(keys, deployment_id, next_token)
+
+    list_more_deployment_instances(
+      keys,
+      deployment_id,
+      Enum.concat(acc, instances["instancesList"]),
+      instances["nextToken"]
+    )
+  end
+
+  def inner_list_more_deployment_instances(keys, deployment_id, next_token) do
+    ExAws.CodeDeploy.list_deployment_instances(deployment_id, next_token: next_token)
+    |> ExAws.request(keys)
+    |> case do
+      {:ok, instances} -> instances
+      _ -> %{"instancesList" => []}
+    end
+  end
+
+  defp batch_get_applications(keys, app_names) do
+    ExAws.CodeDeploy.batch_get_applications(app_names)
+    |> ExAws.request(keys)
+    |> case do
+      {:ok, %{"applicationsInfo" => apps_info}} -> apps_info
+      _ -> []
+    end
+  end
+
+  defp yesterday do
+    Date.utc_today() |> Date.add(-1)
+  end
+
+  defp iso8601_to_datetime(str) do
+    case DateTime.from_iso8601(str) do
+      {:ok, dt, _} -> dt
+      _ -> {:error}
+    end
+  end
+
+  defp day_range(dt) do
+    str = dt |> Date.to_iso8601()
+    begin_day = str <> @begin_of_day
+    end_day = str <> @end_of_day
+
+    case {iso8601_to_datetime(begin_day), iso8601_to_datetime(end_day)} do
+      {:error, _} -> {:error, nil, nil}
+      {_, :error} -> {:error, nil, nil}
+      {dt1, dt2} -> {:ok, DateTime.to_unix(dt1, :second), DateTime.to_unix(dt2, :second)}
+    end
+  end
+
+  defp inner_list_deployment_groups(keys, app) do
+    ExAws.CodeDeploy.list_deployment_groups(app)
+    |> ExAws.request(keys)
+    |> case do
+      {:ok, result} -> result
+      _ -> %{"deploymentGroups" => []}
+    end
+  end
+
+  defp inner_list_more_deployment_groups(keys, app, next_token) do
+    ExAws.CodeDeploy.list_deployment_groups(app, next_token: next_token)
+    |> ExAws.request(keys)
+    |> case do
+      {:ok, result} -> result
+      _ -> %{"deploymentGroups" => []}
+    end
+  end
+
+  defp list_more_deployment_groups(_keys, _app, acc, nil), do: acc
+
+  defp list_more_deployment_groups(keys, app, acc, next_token) do
+    deployment_groups = inner_list_more_deployment_groups(keys, app, next_token)
+
+    list_more_deployment_groups(
+      keys,
+      app,
+      Enum.concat(acc, deployment_groups["deploymentGroups"]),
+      deployment_groups["nextToken"]
+    )
+  end
+
+  def list_deployments_for_date(keys, start_sec, end_sec) do
+    deployments = inner_list_deployments_for_date(keys, start_sec, end_sec)
+    list_more_deployments(keys, deployments["deployments"], deployments["nextToken"])
+  end
+
+  def list_more_deployments(_keys, acc, nil), do: acc
+
+  def list_more_deployments(keys, acc, next_token) do
+    deployments = inner_list_more_deployments(keys, next_token)
+
+    list_more_deployments(
+      keys,
+      Enum.concat(acc, deployments["deployments"]),
+      deployments["nextToken"]
+    )
+  end
+
+  def inner_list_deployments_for_date(keys, start_sec, end_sec) do
+    ExAws.CodeDeploy.list_deployments(
+      create_time_range: %{"start" => start_sec, "end" => end_sec}
+    )
+    |> ExAws.request(keys)
+    |> case do
+      {:ok, deployments} -> deployments
+      _ -> %{"deployments" => []}
+    end
+  end
+
+  def inner_list_more_deployments(keys, next_token) do
+    ExAws.CodeDeploy.list_deployments(next_token: next_token)
+    |> ExAws.request(keys)
+    |> case do
+      {:ok, deployments} -> deployments
+      _ -> %{"deployments" => []}
+    end
+  end
+
+  def list_more_applications(_keys, acc, nil), do: acc
+
+  def list_more_applications(keys, acc, next_token) do
+    apps = inner_list_applications(keys, next_token)
+
+    list_more_applications(
+      keys,
+      Enum.concat(acc, apps["applications"]),
+      apps["nextToken"]
+    )
+  end
+
+  def inner_list_applications(keys) do
+    ExAws.CodeDeploy.list_applications()
+    |> ExAws.request(keys)
+    |> case do
+      {:ok, apps} ->
+        apps
+
+      _ ->
+        %{"applications" => []}
+    end
+  end
+
+  def inner_list_applications(keys, next_token) do
+    ExAws.CodeDeploy.list_applications(next_token: next_token)
+    |> ExAws.request(keys)
+    |> case do
+      {:ok, apps} ->
+        apps
+
+      _ ->
+        %{"applications" => []}
     end
   end
 end
