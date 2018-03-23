@@ -185,7 +185,7 @@ defmodule IExHelpers do
   defp iso8601_to_datetime(str) do
     case DateTime.from_iso8601(str) do
       {:ok, dt, _} -> dt
-      _ -> {:error}
+      _ -> :error
     end
   end
 

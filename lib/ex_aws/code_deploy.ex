@@ -40,6 +40,15 @@ defmodule ExAws.CodeDeploy do
 
   @doc """
     Gets information about one or more applications.
+
+        iex> ExAws.CodeDeploy.batch_get_applications(["TestDeploy1", "TestDeploy2"]).headers
+        [
+          {"x-amz-target", "CodeDeploy_20141006.BatchGetApplications"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
+
+        iex> ExAws.CodeDeploy.batch_get_applications(["TestDeploy1", "TestDeploy2"]).data
+        %{"applicationNames" => ["TestDeploy1", "TestDeploy2"]}
   """
   @spec batch_get_applications([binary, ...]) :: ExAws.Operation.JSON.t()
   def batch_get_applications(app_names) when is_list(app_names) do
@@ -57,6 +66,28 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
+    Creates an Application
+
+    application_name must be unique with the applicable IAM user or AWS account.
+    compute_platform Lambda or Server.
+
+        iex> ExAws.CodeDeploy.create_application("TestDeploy").headers
+        [
+          {"x-amz-target", "CodeDeploy_20141006.CreateApplication"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
+
+        iex> ExAws.CodeDeploy.create_application("TestDeploy").data
+        %{"applicationName" => "TestDeploy", "computePlatform" => "Server"}
+  """
+  @spec create_application(binary) :: ExAws.Operation.JSON.t()
+  @spec create_application(binary, binary) :: ExAws.Operation.JSON.t()
+  def create_application(application_name, compute_platform \\ "Server") do
+    %{"applicationName" => application_name, "computePlatform" => compute_platform}
+    |> request(:create_application)
+  end
+
+  @doc """
     Gets information about one or more instance that are part of a deployment group.
 
     You can use `list_deployment_instances/1` to get a list of instances
@@ -65,7 +96,7 @@ defmodule ExAws.CodeDeploy do
   """
   def batch_get_deployment_instances(deployment_id, instance_ids) when is_list(instance_ids) do
     %{"deploymentId" => deployment_id, "instanceIds" => instance_ids}
-    |> request(:batch_get_deployment_instances)
+    |> request(:batch_sget_deployment_instances)
   end
 
   @doc """
