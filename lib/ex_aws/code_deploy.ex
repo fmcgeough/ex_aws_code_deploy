@@ -23,7 +23,8 @@ defmodule ExAws.CodeDeploy do
 
   ## Examples:
 
-        iex> ExAws.CodeDeploy.list_applications().headers
+        iex> op = ExAws.CodeDeploy.list_applications()
+        iex> op.headers
         [
             {"x-amz-target", "CodeDeploy_20141006.ListApplications"},
             {"content-type", "application/x-amz-json-1.1"}
@@ -41,13 +42,13 @@ defmodule ExAws.CodeDeploy do
   @doc """
     Gets information about one or more applications.
 
-        iex> ExAws.CodeDeploy.batch_get_applications(["TestDeploy1", "TestDeploy2"]).headers
+        iex> op = ExAws.CodeDeploy.batch_get_applications(["TestDeploy1", "TestDeploy2"])
+        iex> op.headers
         [
           {"x-amz-target", "CodeDeploy_20141006.BatchGetApplications"},
           {"content-type", "application/x-amz-json-1.1"}
         ]
-
-        iex> ExAws.CodeDeploy.batch_get_applications(["TestDeploy1", "TestDeploy2"]).data
+        iex> op.data
         %{"applicationNames" => ["TestDeploy1", "TestDeploy2"]}
   """
   @spec batch_get_applications([binary, ...]) :: ExAws.Operation.JSON.t()
@@ -71,13 +72,13 @@ defmodule ExAws.CodeDeploy do
     application_name must be unique with the applicable IAM user or AWS account.
     compute_platform Lambda or Server.
 
-        iex> ExAws.CodeDeploy.create_application("TestDeploy").headers
+        iex> op = ExAws.CodeDeploy.create_application("TestDeploy")
+        iex> op.headers
         [
           {"x-amz-target", "CodeDeploy_20141006.CreateApplication"},
           {"content-type", "application/x-amz-json-1.1"}
         ]
-
-        iex> ExAws.CodeDeploy.create_application("TestDeploy").data
+        iex> op.data
         %{"applicationName" => "TestDeploy", "computePlatform" => "Server"}
   """
   @spec create_application(binary) :: ExAws.Operation.JSON.t()
@@ -93,7 +94,8 @@ defmodule ExAws.CodeDeploy do
     application_name: The name of an AWS CodeDeploy application associated with the applicable
     IAM user or AWS account.
 
-        iex> ExAws.CodeDeploy.delete_application("TestDeploy").headers
+        iex> op = ExAws.CodeDeploy.delete_application("TestDeploy")
+        iex> op.headers
         [
           {"x-amz-target", "CodeDeploy_20141006.DeleteApplication"},
           {"content-type", "application/x-amz-json-1.1"}
@@ -111,7 +113,8 @@ defmodule ExAws.CodeDeploy do
     A deployment configuration cannot be deleted if it is currently
     in use. Predefined configurations cannot be deleted.
 
-        iex> ExAws.CodeDeploy.delete_deployment_config("TestConfig").headers
+        iex> op = ExAws.CodeDeploy.delete_deployment_config("TestConfig")
+        iex> op.headers
         [
           {"x-amz-target", "CodeDeploy_20141006.DeleteDeploymentConfig"},
           {"content-type", "application/x-amz-json-1.1"}
@@ -126,13 +129,13 @@ defmodule ExAws.CodeDeploy do
   @doc """
     Deletes a deployment group.
 
-        iex> ExAws.CodeDeploy.delete_deployment_group("TestApp", "TestDeploy").headers
+        iex> op = ExAws.CodeDeploy.delete_deployment_group("TestApp", "TestDeploy")
+        iex> op.headers
         [
           {"x-amz-target", "CodeDeploy_20141006.DeleteDeploymentGroup"},
           {"content-type", "application/x-amz-json-1.1"}
         ]
-
-        iex> ExAws.CodeDeploy.delete_deployment_group("TestApp", "TestDeploy").data
+        iex> op.data
         %{"applicationName" => "TestApp", "deploymentGroupName" => "TestDeploy"}
   """
   @spec delete_deployment_group(binary, binary) :: ExAws.Operation.JSON.t()
@@ -144,7 +147,8 @@ defmodule ExAws.CodeDeploy do
   @doc """
     Deletes a GitHub account connection.
 
-        iex> ExAws.CodeDeploy.delete_git_hub_account_token("token").headers
+        iex> op = ExAws.CodeDeploy.delete_git_hub_account_token("token")
+        iex> op.headers
         [
           {"x-amz-target", "CodeDeploy_20141006.DeleteGitHubAccountToken"},
           {"content-type", "application/x-amz-json-1.1"}
@@ -159,7 +163,8 @@ defmodule ExAws.CodeDeploy do
   @doc """
     Deregisters an on-premises instance.
 
-        iex> ExAws.CodeDeploy.deregister_on_premises_instance("i-1234").headers
+        iex> op = ExAws.CodeDeploy.deregister_on_premises_instance("i-1234")
+        iex> op.headers
         [
           {"x-amz-target", "CodeDeploy_20141006.DeregisterOnPremisesInstance"},
           {"content-type", "application/x-amz-json-1.1"}
@@ -177,13 +182,13 @@ defmodule ExAws.CodeDeploy do
     deployed to by a deployment_id but you need this function get details on
     the instances like startTime, endTime, lastUpdatedAt and instanceType.
 
-        iex> ExAws.CodeDeploy.batch_get_deployment_instances("TestDeploy", ["i-23324"]).headers
+        iex> op = ExAws.CodeDeploy.batch_get_deployment_instances("TestDeploy", ["i-23324"])
+        iex> op.headers
         [
           {"x-amz-target", "CodeDeploy_20141006.BatchSgetDeploymentInstances"},
           {"content-type", "application/x-amz-json-1.1"}
         ]
-
-        iex> ExAws.CodeDeploy.batch_get_deployment_instances("TestDeploy", ["i-23324"]).data
+        iex> op.data
         %{"deploymentId" => "TestDeploy", "instanceIds" => ["i-23324"]}
   """
   def batch_get_deployment_instances(deployment_id, instance_ids) when is_list(instance_ids) do
@@ -196,7 +201,8 @@ defmodule ExAws.CodeDeploy do
 
   ## Examples:
 
-        iex> ExAws.CodeDeploy.list_deployment_configs().headers
+        iex> op = ExAws.CodeDeploy.list_deployment_configs()
+        iex> op.headers
         [
             {"x-amz-target", "CodeDeploy_20141006.ListDeploymentConfigs"},
             {"content-type", "application/x-amz-json-1.1"}
@@ -221,7 +227,8 @@ defmodule ExAws.CodeDeploy do
 
   ## Examples:
 
-        iex> ExAws.CodeDeploy.list_deployment_groups("application").data
+        iex> op = ExAws.CodeDeploy.list_deployment_groups("application")
+        iex> op.data
         %{"applicationName" => "application"}
   """
   @spec list_deployment_groups(application_name :: binary) :: ExAws.Operation.JSON.t()
@@ -240,7 +247,8 @@ defmodule ExAws.CodeDeploy do
 
   ## Examples:
 
-        iex> ExAws.CodeDeploy.list_deployments().headers
+        iex> op = ExAws.CodeDeploy.list_deployments()
+        iex> op.headers
         [
           {"x-amz-target", "CodeDeploy_20141006.ListDeployments"},
           {"content-type", "application/x-amz-json-1.1"}
@@ -263,7 +271,8 @@ defmodule ExAws.CodeDeploy do
   @doc """
     Gets information about an application.
 
-        iex> ExAws.CodeDeploy.get_application("TestApp").headers
+        iex> op = ExAws.CodeDeploy.get_application("TestApp")
+        iex> op.headers
         [
           {"x-amz-target", "CodeDeploy_20141006.GetApplication"},
           {"content-type", "application/x-amz-json-1.1"}
@@ -280,7 +289,8 @@ defmodule ExAws.CodeDeploy do
 
   ## Examples:
 
-        iex> ExAws.CodeDeploy.get_deployment("deploy_id").data
+        iex> op = ExAws.CodeDeploy.get_deployment("deploy_id")
+        iex> op.data
         %{"deploymentId" => "deploy_id"}
   """
   @spec get_deployment(deployment_id :: binary) :: ExAws.Operation.JSON.t()
@@ -332,7 +342,8 @@ defmodule ExAws.CodeDeploy do
 
   ## Examples:
 
-        iex> ExAws.CodeDeploy.list_deployment_instances("deploy_id").data
+        iex> op = ExAws.CodeDeploy.list_deployment_instances("deploy_id")
+        iex> op.data
         %{"deploymentId" => "deploy_id"}
   """
   @type list_deployment_instances_opts :: [
