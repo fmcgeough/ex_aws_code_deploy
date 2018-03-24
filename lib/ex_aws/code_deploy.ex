@@ -157,6 +157,20 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
+    Deregisters an on-premises instance.
+
+        iex> ExAws.CodeDeploy.deregister_on_premises_instance("i-1234").headers
+        [
+          {"x-amz-target", "CodeDeploy_20141006.DeregisterOnPremisesInstance"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
+  """
+  def deregister_on_premises_instance(instance_name) do
+    %{"instanceName" => instance_name}
+    |> request(:deregister_on_premises_instance)
+  end
+
+  @doc """
     Gets information about one or more instance that are part of a deployment group.
 
     You can use `list_deployment_instances/1` to get a list of instances
@@ -247,6 +261,21 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
+    Gets information about an application.
+
+        iex> ExAws.CodeDeploy.get_application("TestApp").headers
+        [
+          {"x-amz-target", "CodeDeploy_20141006.GetApplication"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
+  """
+  @spec get_application(application_name :: binary) :: ExAws.Operation.JSON.t()
+  def get_application(application_name) do
+    %{"applicationName" => application_name}
+    |> request(:get_application)
+  end
+
+  @doc """
     Gets information about a deployment.
 
   ## Examples:
@@ -258,6 +287,44 @@ defmodule ExAws.CodeDeploy do
   def get_deployment(deployment_id) do
     %{"deploymentId" => deployment_id}
     |> request(:get_deployment)
+  end
+
+  @doc """
+    Gets information about a deployment configuration.
+  """
+  @spec get_deployment_config(deployment_config_name :: binary) :: ExAws.Operation.JSON.t()
+  def get_deployment_config(deployment_config_name) do
+    %{"deploymentConfigName" => deployment_config_name}
+    |> request(:get_deployment_config)
+  end
+
+  @doc """
+    Gets information about a deployment group.
+  """
+  @spec get_deployment_group(application_name :: binary, deployment_group_name :: binary) ::
+          ExAws.Operation.JSON.t()
+  def get_deployment_group(application_name, deployment_group_name) do
+    %{"applicationName" => application_name, "deploymentGroupName" => deployment_group_name}
+    |> request(:get_deployment_group)
+  end
+
+  @doc """
+    Gets information about an instance as part of a deployment.
+  """
+  @spec get_deployment_instance(deployment_id :: binary, instance_id :: binary) ::
+          ExAws.Operation.JSON.t()
+  def get_deployment_instance(deployment_id, instance_id) do
+    %{"deploymentId" => deployment_id, "instanceId" => instance_id}
+    |> request(:get_deployment_instance)
+  end
+
+  @doc """
+    Gets information about an on-premises instance
+  """
+  @spec get_on_premises_instance(instance_name :: binary) :: ExAws.Operation.JSON.t()
+  def get_on_premises_instance(instance_name) do
+    %{"instanceName" => instance_name}
+    |> request(:get_on_premises_instance)
   end
 
   @doc """
