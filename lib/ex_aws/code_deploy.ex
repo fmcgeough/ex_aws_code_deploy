@@ -88,11 +88,38 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
+    Deletes an application.
+
+    application_name: The name of an AWS CodeDeploy application associated with the applicable
+    IAM user or AWS account.
+
+        iex> ExAws.CodeDeploy.delete_application("TestDeploy").headers
+        [
+          {"x-amz-target", "CodeDeploy_20141006.DeleteApplication"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
+  """
+  @spec delete_application(binary) :: ExAws.Operation.JSON.t()
+  def delete_application(application_name) do
+    %{"applicationName" => application_name}
+    |> request(:delete_application)
+  end
+
+  @doc """
     Gets information about one or more instance that are part of a deployment group.
 
     You can use `list_deployment_instances/1` to get a list of instances
     deployed to by a deployment_id but you need this function get details on
     the instances like startTime, endTime, lastUpdatedAt and instanceType.
+
+        iex> ExAws.CodeDeploy.batch_get_deployment_instances("TestDeploy", ["i-23324"]).headers
+        [
+          {"x-amz-target", "CodeDeploy_20141006.BatchSgetDeploymentInstances"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
+
+        iex> ExAws.CodeDeploy.batch_get_deployment_instances("TestDeploy", ["i-23324"]).data
+        %{"deploymentId" => "TestDeploy", "instanceIds" => ["i-23324"]}
   """
   def batch_get_deployment_instances(deployment_id, instance_ids) when is_list(instance_ids) do
     %{"deploymentId" => deployment_id, "instanceIds" => instance_ids}
