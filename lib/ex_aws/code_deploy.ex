@@ -106,6 +106,57 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
+    Deletes a deployment configuration.
+
+    A deployment configuration cannot be deleted if it is currently
+    in use. Predefined configurations cannot be deleted.
+
+        iex> ExAws.CodeDeploy.delete_deployment_config("TestConfig").headers
+        [
+          {"x-amz-target", "CodeDeploy_20141006.DeleteDeploymentConfig"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
+  """
+  @spec delete_deployment_config(binary) :: ExAws.Operation.JSON.t()
+  def delete_deployment_config(deployment_config_name) do
+    %{"deploymentConfigName" => deployment_config_name}
+    |> request(:delete_deployment_config)
+  end
+
+  @doc """
+    Deletes a deployment group.
+
+        iex> ExAws.CodeDeploy.delete_deployment_group("TestApp", "TestDeploy").headers
+        [
+          {"x-amz-target", "CodeDeploy_20141006.DeleteDeploymentGroup"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
+
+        iex> ExAws.CodeDeploy.delete_deployment_group("TestApp", "TestDeploy").data
+        %{"applicationName" => "TestApp", "deploymentGroupName" => "TestDeploy"}
+  """
+  @spec delete_deployment_group(binary, binary) :: ExAws.Operation.JSON.t()
+  def delete_deployment_group(application_name, deployment_group_name) do
+    %{"applicationName" => application_name, "deploymentGroupName" => deployment_group_name}
+    |> request(:delete_deployment_group)
+  end
+
+  @doc """
+    Deletes a GitHub account connection.
+
+        iex> ExAws.CodeDeploy.delete_git_hub_account_token("token").headers
+        [
+          {"x-amz-target", "CodeDeploy_20141006.DeleteGitHubAccountToken"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ]
+  """
+  @spec delete_git_hub_account_token(binary) :: ExAws.Operation.JSON.t()
+  def delete_git_hub_account_token(token_name) do
+    %{"tokenName" => token_name}
+    |> request(:delete_git_hub_account_token)
+  end
+
+  @doc """
     Gets information about one or more instance that are part of a deployment group.
 
     You can use `list_deployment_instances/1` to get a list of instances
