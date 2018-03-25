@@ -15,7 +15,11 @@ defmodule ExAws.CodeDeploy do
     create_time_range: "createTimeRange",
     next_token: "nextToken",
     instance_status_filter: "instanceStatusFilter",
-    instance_type_filter: "instanceTypeFilter"
+    instance_type_filter: "instanceTypeFilter",
+    iam_user_arn: "iamUserArn",
+    iam_session_arn: "iamSessionArn",
+    lifecycle_event_hook_execute_id: "lifecycleEventHookExecutionId",
+    status: "status"
   }
 
   @doc """
@@ -37,6 +41,24 @@ defmodule ExAws.CodeDeploy do
   @spec list_applications(opts :: paging_options) :: ExAws.Operation.JSON.t()
   def list_applications(opts \\ []) do
     opts |> camelize_keys() |> request(:list_applications)
+  end
+
+  @doc """
+    TODO:
+  """
+  def add_tags_to_on_premises_instances(instance_names, _tags) do
+    %{"instanceNames" => instance_names}
+    |> request(:add_tags_to_on_premises_instances)
+  end
+
+  def batch_get_application_revisions(_application_name, _revisions) do
+    %{}
+    |> request(:batch_get_application_revisions)
+  end
+
+  def batch_get_deployment_groups(application_name, deployment_group_names) do
+    %{"applicationName" => application_name, "deploymentGroupNames" => deployment_group_names}
+    |> request(:batch_get_deployment_groups)
   end
 
   @doc """
@@ -67,6 +89,20 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
+    For a blue/green deployment, starts the process of rerouting traffic.
+
+    Start the process of rerouting traffic from instances in the original
+    environment to instances in the replacement environment without waiting
+    for a specified wait time to elapse. (Traffic rerouting, which is achieved
+    by registering instances in the replacement environment with the load
+    balancer, can start as soon as all instances have a status of Ready.)
+  """
+  def continue_deployment(deployment_id) do
+    %{"deploymentId" => deployment_id}
+    |> request(:continue_deployment)
+  end
+
+  @doc """
     Creates an Application
 
     application_name must be unique with the applicable IAM user or AWS account.
@@ -86,6 +122,16 @@ defmodule ExAws.CodeDeploy do
   def create_application(application_name, compute_platform \\ "Server") do
     %{"applicationName" => application_name, "computePlatform" => compute_platform}
     |> request(:create_application)
+  end
+
+  @doc """
+    Deploys an application revision through the specified deployment group.
+
+    TODO: implement creation of deployment option params
+  """
+  def create_deployment(application_name, _opts \\ []) do
+    %{"applicationName" => application_name}
+    |> request(:create_deployment)
   end
 
   @doc """
@@ -197,6 +243,14 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
+    Gets information about one or more on-premises instances.
+  """
+  def batch_get_on_premises_instances(instance_names) do
+    %{"instanceNames" => instance_names}
+    |> request(:batch_get_on_premises_instances)
+  end
+
+  @doc """
     Lists the deployment configurations with the applicable IAM user or AWS account.
 
   ## Examples:
@@ -285,6 +339,16 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
+    Gets information about an application revision.
+
+    TODO: Handle application revision data.
+  """
+  def get_application_revision(application_name, _revision) do
+    %{"applicationName" => application_name}
+    |> request(:get_application_revision)
+  end
+
+  @doc """
     Gets information about a deployment.
 
   ## Examples:
@@ -359,9 +423,46 @@ defmodule ExAws.CodeDeploy do
     |> request(:list_deployment_instances)
   end
 
+  @doc """
+    Attempts to stop an ongoing deployment.
+  """
+  def stop_deployment(deployment_id, auto_rollback_enabled \\ nil) do
+    %{"deploymentId" => deployment_id}
+    |> add_auto_rollback(auto_rollback_enabled)
+    |> request(:stop_deployment)
+  end
+
+  def put_lifecycle_event_hook_execution_status(deployment_id, opts \\ []) do
+    opts |> camelize_keys() |> Map.merge(%{"deploymentId" => deployment_id})
+    |> request(:put_lifecycle_event_hook_execution_status)
+  end
+
+  @doc """
+    Registers an on-premises instance.
+
+    Only one IAM ARN (an IAM session ARN or IAM user ARN) is supported in the request. You cannot use both.
+  """
+  def register_on_premises_instance(instance_name, opts \\ []) do
+    opts |> camelize_keys() |> Map.merge(%{"instanceName" => instance_name})
+    |> request(:register_on_premises_instance)
+  end
+
+  @doc """
+    Changes the name of an application.
+  """
+  def update_application(application_name, new_application_name) do
+    %{"applicationName" => application_name, "newApplicationName" => new_application_name}
+    |> request(:update_application)
+  end
+
   ####################
   # Helper Functions #
   ####################
+  defp add_auto_rollback(acc, auto_rollback) when is_boolean(auto_rollback) do
+    Map.put(acc, "autoRollbackEnabled", auto_rollback)
+  end
+
+  defp add_auto_rollback(acc, _), do: acc
 
   defp request(data, action, opts \\ %{}) do
     operation = action |> Atom.to_string() |> Macro.camelize()
