@@ -44,18 +44,24 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    TODO:
+    Adds tags to on-premises instances. TODO: need work on tags
   """
   def add_tags_to_on_premises_instances(instance_names, _tags) do
     %{"instanceNames" => instance_names}
     |> request(:add_tags_to_on_premises_instances)
   end
 
+  @doc """
+    Gets information about one or more application revisions.
+  """
   def batch_get_application_revisions(_application_name, _revisions) do
     %{}
     |> request(:batch_get_application_revisions)
   end
 
+  @doc """
+    Gets information about one or more deployment groups.
+  """
   def batch_get_deployment_groups(application_name, deployment_group_names) do
     %{"applicationName" => application_name, "deploymentGroupNames" => deployment_group_names}
     |> request(:batch_get_deployment_groups)
