@@ -1,10 +1,10 @@
-# ExAws.CodeDeploy
+# AWS CodeDeploy API
 
-Service module for https://github.com/ex-aws/ex_aws
+AWS Code Deploy Service module for [ex_aws](https://github.com/ex-aws/ex_aws).
 
 ## Installation
 
-The package can be installed by adding ex_aws_code_deploy to your list of dependencies in mix.exs along with :ex_aws and your preferred JSON codec / http client
+The package can be installed by adding ex_aws_code_deploy to your list of dependencies in mix.exs along with :ex_aws and your preferred JSON codec / http client. Example:
 
 ```elixir
 def deps do
@@ -27,7 +27,7 @@ end
 
 The MIT License (MIT)
 
-Copyright (c) 2017
+Copyright (c) 2018 Vonage, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

@@ -2,10 +2,10 @@ defmodule ExAws.CodeDeploy do
   @moduledoc """
     Operations on AWS Code Deploy
   """
-  # version of the AWS API
 
   import ExAws.Utils, only: [camelize_keys: 1, camelize_keys: 2]
 
+  # version of the AWS API
   @version "20141006"
   @namespace "CodeDeploy"
   @key_spec %{
@@ -34,6 +34,7 @@ defmodule ExAws.CodeDeploy do
             {"content-type", "application/x-amz-json-1.1"}
         ]
   """
+  @type tag :: {key :: atom, value :: binary}
   @type paging_options :: [
           {:next_token, binary}
         ]
@@ -44,19 +45,22 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Adds tags to on-premises instances. TODO: need work on tags
-  """
-  def add_tags_to_on_premises_instances(instance_names, _tags) do
-    %{"instanceNames" => instance_names}
-    |> request(:add_tags_to_on_premises_instances)
-  end
+    Adds tags to on-premises instances.
 
-  @doc """
-    Gets information about one or more application revisions.
+  ## Examples
+
+        iex> op = ExAws.CodeDeploy.add_tags_to_on_premises_instances(["i-abcdefgh"], [{"key1", "value"}, {"key2", "value"}])
+        iex> op.data["instanceNames"]
+        ["i-abcdefgh"]
+        iex> op.data["tags"]
+        [%{"Key" => "key2", "Value" => "value"}, %{"Key" => "key1", "Value" => "value"}]
   """
-  def batch_get_application_revisions(_application_name, _revisions) do
-    %{}
-    |> request(:batch_get_application_revisions)
+  def add_tags_to_on_premises_instances(instance_names, tags)
+      when is_list(tags) and is_list(instance_names) do
+    api_tags = tags |> Enum.reduce([], fn {k, v}, acc -> [%{"Key" => k, "Value" => v} | acc] end)
+
+    %{"instanceNames" => instance_names, "tags" => api_tags}
+    |> request(:add_tags_to_on_premises_instances)
   end
 
   @doc """
@@ -69,6 +73,8 @@ defmodule ExAws.CodeDeploy do
 
   @doc """
     Gets information about one or more applications.
+
+  ## Examples
 
         iex> op = ExAws.CodeDeploy.batch_get_applications(["TestDeploy1", "TestDeploy2"])
         iex> op.headers
@@ -114,6 +120,8 @@ defmodule ExAws.CodeDeploy do
     application_name must be unique with the applicable IAM user or AWS account.
     compute_platform Lambda or Server.
 
+  ## Examples:
+
         iex> op = ExAws.CodeDeploy.create_application("TestDeploy")
         iex> op.headers
         [
@@ -146,6 +154,8 @@ defmodule ExAws.CodeDeploy do
     application_name: The name of an AWS CodeDeploy application associated with the applicable
     IAM user or AWS account.
 
+  ## Examples
+
         iex> op = ExAws.CodeDeploy.delete_application("TestDeploy")
         iex> op.headers
         [
@@ -165,6 +175,8 @@ defmodule ExAws.CodeDeploy do
     A deployment configuration cannot be deleted if it is currently
     in use. Predefined configurations cannot be deleted.
 
+  ## Examples
+
         iex> op = ExAws.CodeDeploy.delete_deployment_config("TestConfig")
         iex> op.headers
         [
@@ -180,6 +192,8 @@ defmodule ExAws.CodeDeploy do
 
   @doc """
     Deletes a deployment group.
+
+  ## Examples
 
         iex> op = ExAws.CodeDeploy.delete_deployment_group("TestApp", "TestDeploy")
         iex> op.headers
@@ -199,6 +213,8 @@ defmodule ExAws.CodeDeploy do
   @doc """
     Deletes a GitHub account connection.
 
+  ## Examples
+
         iex> op = ExAws.CodeDeploy.delete_git_hub_account_token("token")
         iex> op.headers
         [
@@ -214,6 +230,8 @@ defmodule ExAws.CodeDeploy do
 
   @doc """
     Deregisters an on-premises instance.
+
+  ## Examples
 
         iex> op = ExAws.CodeDeploy.deregister_on_premises_instance("i-1234")
         iex> op.headers
@@ -233,6 +251,8 @@ defmodule ExAws.CodeDeploy do
     You can use `list_deployment_instances/1` to get a list of instances
     deployed to by a deployment_id but you need this function get details on
     the instances like startTime, endTime, lastUpdatedAt and instanceType.
+
+  ## Examples
 
         iex> op = ExAws.CodeDeploy.batch_get_deployment_instances("TestDeploy", ["i-23324"])
         iex> op.headers
@@ -295,7 +315,9 @@ defmodule ExAws.CodeDeploy do
   @spec list_deployment_groups(application_name :: binary, opts :: paging_options) ::
           ExAws.Operation.JSON.t()
   def list_deployment_groups(application_name, opts \\ []) do
-    opts |> camelize_keys() |> Map.merge(%{"applicationName" => application_name})
+    opts
+    |> camelize_keys()
+    |> Map.merge(%{"applicationName" => application_name})
     |> request(:list_deployment_groups)
   end
 
@@ -330,6 +352,8 @@ defmodule ExAws.CodeDeploy do
 
   @doc """
     Gets information about an application.
+
+  ## Examples
 
         iex> op = ExAws.CodeDeploy.get_application("TestApp")
         iex> op.headers
@@ -425,7 +449,9 @@ defmodule ExAws.CodeDeploy do
   @spec list_deployment_instances(deployment_id :: binary, opts :: list_deployment_instances_opts) ::
           ExAws.Operation.JSON.t()
   def list_deployment_instances(deployment_id, opts \\ []) do
-    opts |> camelize_keys(spec: @key_spec) |> Map.merge(%{"deploymentId" => deployment_id})
+    opts
+    |> camelize_keys(spec: @key_spec)
+    |> Map.merge(%{"deploymentId" => deployment_id})
     |> request(:list_deployment_instances)
   end
 
@@ -439,7 +465,9 @@ defmodule ExAws.CodeDeploy do
   end
 
   def put_lifecycle_event_hook_execution_status(deployment_id, opts \\ []) do
-    opts |> camelize_keys() |> Map.merge(%{"deploymentId" => deployment_id})
+    opts
+    |> camelize_keys()
+    |> Map.merge(%{"deploymentId" => deployment_id})
     |> request(:put_lifecycle_event_hook_execution_status)
   end
 
@@ -449,7 +477,9 @@ defmodule ExAws.CodeDeploy do
     Only one IAM ARN (an IAM session ARN or IAM user ARN) is supported in the request. You cannot use both.
   """
   def register_on_premises_instance(instance_name, opts \\ []) do
-    opts |> camelize_keys() |> Map.merge(%{"instanceName" => instance_name})
+    opts
+    |> camelize_keys()
+    |> Map.merge(%{"instanceName" => instance_name})
     |> request(:register_on_premises_instance)
   end
 
