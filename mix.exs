@@ -39,7 +39,8 @@ defmodule ExAwsCodeDeploy.MixProject do
       {:hackney, "1.6.3 or 1.6.5 or 1.7.1 or 1.8.6 or ~> 1.9", only: [:dev, :test]},
       {:poison, ">= 1.2.0", optional: true},
       {:ex_doc, "~> 0.19.2", only: [:dev, :test]},
-      {:ex_aws, "~> 2.0"}
+      {:ex_aws, "~> 2.0"},
+      {:dialyxir, "~> 0.5", only: [:dev]}
     ]
   end
 

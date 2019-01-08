@@ -141,10 +141,11 @@ defmodule ExAws.CodeDeploy do
   @doc """
     Deploys an application revision through the specified deployment group.
 
-    TODO: implement creation of deployment option params
+    Caller is responsible for defining the deployment_details in a manner that
+    matches what Amazon expects. See unit test.
   """
-  def create_deployment(application_name, _opts \\ []) do
-    %{"applicationName" => application_name}
+  def create_deployment(application_name, deployment_details \\ %{}) do
+    Map.merge(deployment_details, %{"applicationName" => application_name})
     |> request(:create_deployment)
   end
 
@@ -240,6 +241,7 @@ defmodule ExAws.CodeDeploy do
           {"content-type", "application/x-amz-json-1.1"}
         ]
   """
+  @spec deregister_on_premises_instance(binary) :: ExAws.Operation.JSON.t()
   def deregister_on_premises_instance(instance_name) do
     %{"instanceName" => instance_name}
     |> request(:deregister_on_premises_instance)
@@ -271,7 +273,8 @@ defmodule ExAws.CodeDeploy do
   @doc """
     Gets information about one or more on-premises instances.
   """
-  def batch_get_on_premises_instances(instance_names) do
+  @spec batch_get_on_premises_instances([binary, ...]) :: ExAws.Operation.JSON.t()
+  def batch_get_on_premises_instances(instance_names) when is_list(instance_names) do
     %{"instanceNames" => instance_names}
     |> request(:batch_get_on_premises_instances)
   end
@@ -371,10 +374,22 @@ defmodule ExAws.CodeDeploy do
   @doc """
     Gets information about an application revision.
 
-    TODO: Handle application revision data.
+    Caller is responsible for defining the revision details (if needed)
+    in a manner that matches what Amazon expects. See unit test.
+
+  ## Examples
+
+        iex> op = ExAws.CodeDeploy.get_application_revision("TestApp")
+        iex> op.data
+        %{"applicationName" => "TestApp"}
+        iex> op.headers
+        [
+        {"x-amz-target", "CodeDeploy_20141006.GetApplicationRevision"},
+        {"content-type", "application/x-amz-json-1.1"}
+        ]
   """
-  def get_application_revision(application_name, _revision) do
-    %{"applicationName" => application_name}
+  def get_application_revision(application_name, revision \\ %{}) do
+    Map.merge(revision, %{"applicationName" => application_name})
     |> request(:get_application_revision)
   end
 
@@ -464,6 +479,12 @@ defmodule ExAws.CodeDeploy do
     |> request(:stop_deployment)
   end
 
+  @doc """
+    Sets the result of a Lambda validation function. The function validates one or
+    both lifecycle events (BeforeAllowTraffic and AfterAllowTraffic) and returns
+    Succeeded or Failed.
+  """
+  @spec put_lifecycle_event_hook_execution_status(any(), any()) :: ExAws.Operation.JSON.t()
   def put_lifecycle_event_hook_execution_status(deployment_id, opts \\ []) do
     opts
     |> camelize_keys()
