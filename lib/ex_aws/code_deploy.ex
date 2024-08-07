@@ -5,6 +5,8 @@ defmodule ExAws.CodeDeploy do
 
   import ExAws.Utils, only: [camelize_keys: 1, camelize_keys: 2]
 
+  alias ExAws.Operation.JSON, as: ExAwsOperationJSON
+
   # version of the AWS API
   @version "20141006"
   @namespace "CodeDeploy"
@@ -23,16 +25,26 @@ defmodule ExAws.CodeDeploy do
   }
 
   @doc """
-    Lists the applications registered with the applicable IAM user or AWS account.
+  Lists the applications registered with the applicable IAM user or AWS account.
 
-  ## Examples:
+  ## Examples
 
-        iex> op = ExAws.CodeDeploy.list_applications()
-        iex> op.headers
-        [
-            {"x-amz-target", "CodeDeploy_20141006.ListApplications"},
-            {"content-type", "application/x-amz-json-1.1"}
-        ]
+      iex> ExAws.CodeDeploy.list_applications()
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.ListApplications"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @type tag :: {key :: atom, value :: binary}
   @type paging_options :: [
@@ -45,15 +57,32 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Adds tags to on-premises instances.
+  Adds tags to on-premises instances.
 
   ## Examples
 
-        iex> op = ExAws.CodeDeploy.add_tags_to_on_premises_instances(["i-abcdefgh"], [{"key1", "value"}, {"key2", "value"}])
-        iex> op.data["instanceNames"]
-        ["i-abcdefgh"]
-        iex> op.data["tags"]
-        [%{"Key" => "key2", "Value" => "value"}, %{"Key" => "key1", "Value" => "value"}]
+      iex> ExAws.CodeDeploy.add_tags_to_on_premises_instances(["i-abcdefgh"], [{"key1", "value"}, {"key2", "value"}])
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "instanceNames" => ["i-abcdefgh"],
+          "tags" => [
+            %{"Key" => "key2", "Value" => "value"},
+            %{"Key" => "key1", "Value" => "value"}
+          ]
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.AddTagsToOnPremisesInstances"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   def add_tags_to_on_premises_instances(instance_names, tags)
       when is_list(tags) and is_list(instance_names) do
@@ -64,7 +93,29 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Gets information about one or more deployment groups.
+  Gets information about one or more deployment groups.
+
+  ## Examples
+
+      iex> ExAws.CodeDeploy.batch_get_deployment_groups("my-codedeploy-application", ["my-deploy-group1", "my-deploy-group2"])
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "applicationName" => "my-codedeploy-application",
+          "deploymentGroupNames" => ["my-deploy-group1", "my-deploy-group2"]
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.BatchGetDeploymentGroups"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   def batch_get_deployment_groups(application_name, deployment_group_names) do
     %{"applicationName" => application_name, "deploymentGroupNames" => deployment_group_names}
@@ -72,18 +123,26 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Gets information about one or more applications.
+  Gets information about one or more applications.
 
   ## Examples
 
-        iex> op = ExAws.CodeDeploy.batch_get_applications(["TestDeploy1", "TestDeploy2"])
-        iex> op.headers
-        [
+      iex> ExAws.CodeDeploy.batch_get_applications(["TestDeploy1", "TestDeploy2"])
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"applicationNames" => ["TestDeploy1", "TestDeploy2"]},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodeDeploy_20141006.BatchGetApplications"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
-        iex> op.data
-        %{"applicationNames" => ["TestDeploy1", "TestDeploy2"]}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec batch_get_applications([binary, ...]) :: ExAws.Operation.JSON.t()
   def batch_get_applications(app_names) when is_list(app_names) do
@@ -92,7 +151,26 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Gets information about one or more deployments.
+  Gets information about one or more deployments.
+
+  ## Examples
+
+      iex> ExAws.CodeDeploy.batch_get_deployments(["d-A1B2C3111", "d-A1B2C3222"])
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"deploymentIds" => ["d-A1B2C3111", "d-A1B2C3222"]},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.BatchGetDeployments"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec batch_get_deployments([binary, ...]) :: ExAws.Operation.JSON.t()
   def batch_get_deployments(deployment_ids) when is_list(deployment_ids) do
@@ -101,13 +179,13 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    For a blue/green deployment, starts the process of rerouting traffic.
+  For a blue/green deployment, starts the process of rerouting traffic.
 
-    Start the process of rerouting traffic from instances in the original
-    environment to instances in the replacement environment without waiting
-    for a specified wait time to elapse. (Traffic rerouting, which is achieved
-    by registering instances in the replacement environment with the load
-    balancer, can start as soon as all instances have a status of Ready.)
+  Start the process of rerouting traffic from instances in the original
+  environment to instances in the replacement environment without waiting
+  for a specified wait time to elapse. (Traffic rerouting, which is achieved
+  by registering instances in the replacement environment with the load
+  balancer, can start as soon as all instances have a status of Ready.)
   """
   def continue_deployment(deployment_id) do
     %{"deploymentId" => deployment_id}
@@ -115,21 +193,29 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Creates an Application
+  Creates an Application
 
-    application_name must be unique with the applicable IAM user or AWS account.
-    compute_platform Lambda or Server.
+  application_name must be unique with the applicable IAM user or AWS account.
+  compute_platform Lambda or Server.
 
   ## Examples:
 
-        iex> op = ExAws.CodeDeploy.create_application("TestDeploy")
-        iex> op.headers
-        [
+      iex> ExAws.CodeDeploy.create_application("TestDeploy")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"applicationName" => "TestDeploy", "computePlatform" => "Server"},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodeDeploy_20141006.CreateApplication"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
-        iex> op.data
-        %{"applicationName" => "TestDeploy", "computePlatform" => "Server"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec create_application(binary) :: ExAws.Operation.JSON.t()
   @spec create_application(binary, binary) :: ExAws.Operation.JSON.t()
@@ -139,10 +225,10 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Deploys an application revision through the specified deployment group.
+  Deploys an application revision through the specified deployment group.
 
-    Caller is responsible for defining the deployment_details in a manner that
-    matches what Amazon expects. See unit test.
+  Caller is responsible for defining the deployment_details in a manner that
+  matches what Amazon expects. See unit test.
   """
   def create_deployment(application_name, deployment_details \\ %{}) do
     Map.merge(deployment_details, %{"applicationName" => application_name})
@@ -150,19 +236,29 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Deletes an application.
+  Deletes an application.
 
-    application_name: The name of an AWS CodeDeploy application associated with the applicable
-    IAM user or AWS account.
+  application_name: The name of an AWS CodeDeploy application associated with the applicable
+  IAM user or AWS account.
 
   ## Examples
 
-        iex> op = ExAws.CodeDeploy.delete_application("TestDeploy")
-        iex> op.headers
-        [
+      iex> ExAws.CodeDeploy.delete_application("TestDeploy")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"applicationName" => "TestDeploy"},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodeDeploy_20141006.DeleteApplication"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec delete_application(binary) :: ExAws.Operation.JSON.t()
   def delete_application(application_name) do
@@ -171,19 +267,29 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Deletes a deployment configuration.
+  Deletes a deployment configuration.
 
-    A deployment configuration cannot be deleted if it is currently
-    in use. Predefined configurations cannot be deleted.
+  A deployment configuration cannot be deleted if it is currently
+  in use. Predefined configurations cannot be deleted.
 
   ## Examples
 
-        iex> op = ExAws.CodeDeploy.delete_deployment_config("TestConfig")
-        iex> op.headers
-        [
+      iex> ExAws.CodeDeploy.delete_deployment_config("TestConfig")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"deploymentConfigName" => "TestConfig"},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodeDeploy_20141006.DeleteDeploymentConfig"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec delete_deployment_config(binary) :: ExAws.Operation.JSON.t()
   def delete_deployment_config(deployment_config_name) do
@@ -192,18 +298,26 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Deletes a deployment group.
+  Deletes a deployment group.
 
   ## Examples
 
-        iex> op = ExAws.CodeDeploy.delete_deployment_group("TestApp", "TestDeploy")
-        iex> op.headers
-        [
+      iex> ExAws.CodeDeploy.delete_deployment_group("TestApp", "TestDeploy")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"applicationName" => "TestApp", "deploymentGroupName" => "TestDeploy"},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodeDeploy_20141006.DeleteDeploymentGroup"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
-        iex> op.data
-        %{"applicationName" => "TestApp", "deploymentGroupName" => "TestDeploy"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec delete_deployment_group(binary, binary) :: ExAws.Operation.JSON.t()
   def delete_deployment_group(application_name, deployment_group_name) do
@@ -212,16 +326,26 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Deletes a GitHub account connection.
+  Deletes a GitHub account connection.
 
   ## Examples
 
-        iex> op = ExAws.CodeDeploy.delete_git_hub_account_token("token")
-        iex> op.headers
-        [
+      iex> ExAws.CodeDeploy.delete_git_hub_account_token("token")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"tokenName" => "token"},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodeDeploy_20141006.DeleteGitHubAccountToken"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec delete_git_hub_account_token(binary) :: ExAws.Operation.JSON.t()
   def delete_git_hub_account_token(token_name) do
@@ -230,16 +354,26 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Deregisters an on-premises instance.
+  Deregisters an on-premises instance.
 
   ## Examples
 
-        iex> op = ExAws.CodeDeploy.deregister_on_premises_instance("i-1234")
-        iex> op.headers
-        [
+      iex> ExAws.CodeDeploy.deregister_on_premises_instance("i-1234")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"instanceName" => "i-1234"},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodeDeploy_20141006.DeregisterOnPremisesInstance"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec deregister_on_premises_instance(binary) :: ExAws.Operation.JSON.t()
   def deregister_on_premises_instance(instance_name) do
@@ -248,22 +382,30 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Gets information about one or more instance that are part of a deployment group.
+  Gets information about one or more instance that are part of a deployment group.
 
-    You can use `list_deployment_instances/1` to get a list of instances
-    deployed to by a deployment_id but you need this function get details on
-    the instances like startTime, endTime, lastUpdatedAt and instanceType.
+  You can use `list_deployment_instances/1` to get a list of instances
+  deployed to by a deployment_id but you need this function get details on
+  the instances like startTime, endTime, lastUpdatedAt and instanceType.
 
   ## Examples
 
-        iex> op = ExAws.CodeDeploy.batch_get_deployment_instances("TestDeploy", ["i-23324"])
-        iex> op.headers
-        [
+      iex> ExAws.CodeDeploy.batch_get_deployment_instances("TestDeploy", ["i-23324"])
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"deploymentId" => "TestDeploy", "instanceIds" => ["i-23324"]},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodeDeploy_20141006.BatchSgetDeploymentInstances"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
-        iex> op.data
-        %{"deploymentId" => "TestDeploy", "instanceIds" => ["i-23324"]}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   def batch_get_deployment_instances(deployment_id, instance_ids) when is_list(instance_ids) do
     %{"deploymentId" => deployment_id, "instanceIds" => instance_ids}
@@ -271,7 +413,26 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Gets information about one or more on-premises instances.
+  Gets information about one or more on-premises instances.
+
+  ## Examples
+
+      iex> ExAws.CodeDeploy.batch_get_on_premises_instances(["i-23324", "i-43231"])
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"instanceNames" => ["i-23324", "i-43231"]},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.BatchGetOnPremisesInstances"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec batch_get_on_premises_instances([binary, ...]) :: ExAws.Operation.JSON.t()
   def batch_get_on_premises_instances(instance_names) when is_list(instance_names) do
@@ -280,16 +441,26 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Lists the deployment configurations with the applicable IAM user or AWS account.
+  Lists the deployment configurations with the applicable IAM user or AWS account.
 
-  ## Examples:
+  ## Examples
 
-        iex> op = ExAws.CodeDeploy.list_deployment_configs()
-        iex> op.headers
-        [
-            {"x-amz-target", "CodeDeploy_20141006.ListDeploymentConfigs"},
-            {"content-type", "application/x-amz-json-1.1"}
-        ]
+      iex> ExAws.CodeDeploy.list_deployment_configs()
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.ListDeploymentConfigs"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec list_deployment_configs() :: ExAws.Operation.JSON.t()
   @spec list_deployment_configs(opts :: paging_options) :: ExAws.Operation.JSON.t()
@@ -298,21 +469,36 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Lists the deployment groups for an application registered with the applicable IAM user or AWS account.
+  Lists the deployment groups for an application registered with the applicable IAM user or AWS account.
 
-    This returns results that look like:
+  This returns results that look like:
 
+  ```
     {:ok,
       %{
         "applicationName" => "<your app name>",
         "deploymentGroups" => ["<your deploy group", ...]
       }}
+  ```
 
-  ## Examples:
+  ## Examples
 
-        iex> op = ExAws.CodeDeploy.list_deployment_groups("application")
-        iex> op.data
-        %{"applicationName" => "application"}
+      iex> ExAws.CodeDeploy.list_deployment_groups("application")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"applicationName" => "application"},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.ListDeploymentGroups"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec list_deployment_groups(application_name :: binary) :: ExAws.Operation.JSON.t()
   @spec list_deployment_groups(application_name :: binary, opts :: paging_options) ::
@@ -325,19 +511,29 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Lists the deployments in a deployment group for an application registered with the applicable IAM user or AWS account.
+  Lists the deployments in a deployment group for an application registered with the applicable IAM user or AWS account.
 
-    The start and end times are in Epoch time. To leave either open-ended pass in nil. Example:
-    list_deployments(create_time_range: %{start: 1520963748, end: nil})
+  The start and end times are in Epoch time. To leave either open-ended pass in nil. Example:
+  list_deployments(create_time_range: %{start: 1520963748, end: nil})
 
-  ## Examples:
+  ## Examples
 
-        iex> op = ExAws.CodeDeploy.list_deployments()
-        iex> op.headers
-        [
+      iex> ExAws.CodeDeploy.list_deployments()
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodeDeploy_20141006.ListDeployments"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @type time_range :: %{optional(binary) => binary}
   @type list_deployments_options :: [
@@ -354,16 +550,26 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Gets information about an application.
+  Gets information about an application.
 
   ## Examples
 
-        iex> op = ExAws.CodeDeploy.get_application("TestApp")
-        iex> op.headers
-        [
+      iex> ExAws.CodeDeploy.get_application("TestApp")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"applicationName" => "TestApp"},
+        params: %{},
+        headers: [
           {"x-amz-target", "CodeDeploy_20141006.GetApplication"},
           {"content-type", "application/x-amz-json-1.1"}
-        ]
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec get_application(application_name :: binary) :: ExAws.Operation.JSON.t()
   def get_application(application_name) do
@@ -372,21 +578,29 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Gets information about an application revision.
+  Gets information about an application revision.
 
-    Caller is responsible for defining the revision details (if needed)
-    in a manner that matches what Amazon expects. See unit test.
+  Caller is responsible for defining the revision details (if needed)
+  in a manner that matches what Amazon expects. See unit test.
 
   ## Examples
 
-        iex> op = ExAws.CodeDeploy.get_application_revision("TestApp")
-        iex> op.data
-        %{"applicationName" => "TestApp"}
-        iex> op.headers
-        [
-        {"x-amz-target", "CodeDeploy_20141006.GetApplicationRevision"},
-        {"content-type", "application/x-amz-json-1.1"}
-        ]
+      iex> ExAws.CodeDeploy.get_application_revision("TestApp")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"applicationName" => "TestApp"},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.GetApplicationRevision"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   def get_application_revision(application_name, revision \\ %{}) do
     Map.merge(revision, %{"applicationName" => application_name})
@@ -394,13 +608,26 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Gets information about a deployment.
+  Gets information about a deployment.
 
   ## Examples:
 
-        iex> op = ExAws.CodeDeploy.get_deployment("deploy_id")
-        iex> op.data
-        %{"deploymentId" => "deploy_id"}
+      iex> ExAws.CodeDeploy.get_deployment("deploy_id")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"deploymentId" => "deploy_id"},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.GetDeployment"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec get_deployment(deployment_id :: binary) :: ExAws.Operation.JSON.t()
   def get_deployment(deployment_id) do
@@ -409,7 +636,7 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Gets information about a deployment configuration.
+  Gets information about a deployment configuration.
   """
   @spec get_deployment_config(deployment_config_name :: binary) :: ExAws.Operation.JSON.t()
   def get_deployment_config(deployment_config_name) do
@@ -418,7 +645,29 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Gets information about a deployment group.
+  Gets information about a deployment group.
+
+  ## Examples
+
+      iex> ExAws.CodeDeploy.get_deployment_group("TestApp-us-east-1", "dep-group-def-456")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "applicationName" => "TestApp-us-east-1",
+          "deploymentGroupName" => "dep-group-def-456"
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.GetDeploymentGroup"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec get_deployment_group(application_name :: binary, deployment_group_name :: binary) ::
           ExAws.Operation.JSON.t()
@@ -428,7 +677,29 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Gets information about an instance as part of a deployment.
+  Gets information about an instance as part of a deployment.
+
+  ## Examples
+
+      iex> ExAws.CodeDeploy.get_deployment_instance("d-7539MBT7C", "i-496636f700EXAMPLE")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "deploymentId" => "d-7539MBT7C",
+          "instanceId" => "i-496636f700EXAMPLE"
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.GetDeploymentInstance"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec get_deployment_instance(deployment_id :: binary, instance_id :: binary) ::
           ExAws.Operation.JSON.t()
@@ -438,7 +709,7 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Gets information about an on-premises instance
+  Gets information about an on-premises instance
   """
   @spec get_on_premises_instance(instance_name :: binary) :: ExAws.Operation.JSON.t()
   def get_on_premises_instance(instance_name) do
@@ -447,13 +718,26 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Lists the instance for a deployment associated with the applicable IAM user or AWS account.
+  Lists the instance for a deployment associated with the applicable IAM user or AWS account.
 
   ## Examples:
 
-        iex> op = ExAws.CodeDeploy.list_deployment_instances("deploy_id")
-        iex> op.data
-        %{"deploymentId" => "deploy_id"}
+      iex> ExAws.CodeDeploy.list_deployment_instances("deploy_id")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"deploymentId" => "deploy_id"},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.ListDeploymentInstances"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @type list_deployment_instances_opts :: [
           instance_status_filter: [binary, ...],
@@ -471,7 +755,27 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Attempts to stop an ongoing deployment.
+  Attempts to stop an ongoing deployment.
+
+  ## Examples
+
+
+      iex> ExAws.CodeDeploy.stop_deployment("i-123434")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"deploymentId" => "i-123434"},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.StopDeployment"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   def stop_deployment(deployment_id, auto_rollback_enabled \\ nil) do
     %{"deploymentId" => deployment_id}
@@ -480,9 +784,9 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Sets the result of a Lambda validation function. The function validates one or
-    both lifecycle events (BeforeAllowTraffic and AfterAllowTraffic) and returns
-    Succeeded or Failed.
+  Sets the result of a Lambda validation function. The function validates one or
+  both lifecycle events (BeforeAllowTraffic and AfterAllowTraffic) and returns
+  Succeeded or Failed.
   """
   @spec put_lifecycle_event_hook_execution_status(any(), any()) :: ExAws.Operation.JSON.t()
   def put_lifecycle_event_hook_execution_status(deployment_id, opts \\ []) do
@@ -493,9 +797,9 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Registers an on-premises instance.
+  Registers an on-premises instance.
 
-    Only one IAM ARN (an IAM session ARN or IAM user ARN) is supported in the request. You cannot use both.
+  Only one IAM ARN (an IAM session ARN or IAM user ARN) is supported in the request. You cannot use both.
   """
   def register_on_premises_instance(instance_name, opts \\ []) do
     opts
@@ -505,7 +809,7 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-    Changes the name of an application.
+  Changes the name of an application.
   """
   def update_application(application_name, new_application_name) do
     %{"applicationName" => application_name, "newApplicationName" => new_application_name}
@@ -524,7 +828,7 @@ defmodule ExAws.CodeDeploy do
   defp request(data, action, opts \\ %{}) do
     operation = action |> Atom.to_string() |> Macro.camelize()
 
-    ExAws.Operation.JSON.new(
+    ExAwsOperationJSON.new(
       :codedeploy,
       %{
         data: data,
