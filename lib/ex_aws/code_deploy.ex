@@ -1,28 +1,297 @@
 defmodule ExAws.CodeDeploy do
   @moduledoc """
-    Operations on AWS Code Deploy
+  Operations on AWS CodeDeploy
+
+  ## Description
+
+  CodeDeploy is a deployment service that automates application deployments
+  to Amazon EC2 instances, on-premises instances, serverless Lambda functions,
+  or Amazon ECS services.
+
+  You can deploy a nearly unlimited variety of application content, including:
+
+  - Code
+  - Serverless AWS Lambda functions
+  - Web and configuration files
+  - Executables
+  - Packages
+  - Scripts
+  - Multimedia files
+
+  ## Resources
+
+  - [CodeDeploy User Guide](https://docs.aws.amazon.com/codedeploy/latest/userguide)
+  - [CodeDeploy API Reference Guide](https://docs.aws.amazon.com/codedeploy/latest/APIReference/)
+  - [CLI Reference for CodeDeploy](https://docs.aws.amazon.com/cli/latest/reference/deploy/index.html)
+  - [CodeDeploy Developer Forum](https://forums.aws.amazon.com/forum.jspa?forumID=179)
   """
 
-  import ExAws.Utils, only: [camelize_keys: 1, camelize_keys: 2]
-
+  alias ExAws.CodeDeploy.Utils
   alias ExAws.Operation.JSON, as: ExAwsOperationJSON
 
   # version of the AWS API
   @version "20141006"
   @namespace "CodeDeploy"
-  @key_spec %{
-    application_name: "applicationName",
-    deployment_group_name: "deploymentGroupName",
-    include_only_statues: "includeOnlyStatues",
-    create_time_range: "createTimeRange",
-    next_token: "nextToken",
-    instance_status_filter: "instanceStatusFilter",
-    instance_type_filter: "instanceTypeFilter",
-    iam_user_arn: "iamUserArn",
-    iam_session_arn: "iamSessionArn",
-    lifecycle_event_hook_execute_id: "lifecycleEventHookExecutionId",
-    status: "status"
-  }
+
+  @typedoc """
+  Name of on-premise instance
+  """
+  @type instance_name() :: binary()
+
+  @typedoc """
+  Name of the application. Minimum length of 1. Maximum length of 100.
+  """
+  @type application_name() :: binary()
+
+  @typedoc """
+  The name of a deployment configuration associated with the user or AWS account. Minimum length of
+  1. Maximum length of 100.
+  """
+  @type deployment_config_name() :: binary()
+
+  @typedoc """
+  Each deployment is assigned a unique id
+  """
+  @type deployment_id() :: binary()
+
+  @typedoc """
+
+  """
+  @type instance_id() :: binary()
+
+  @typedoc """
+  Name of the deployment group. Minimum length of 1. Maximum length of 100.
+  """
+  @type deployment_group_name() :: binary()
+
+  @typedoc """
+  The name of the GitHub account connection
+  """
+  @type token_name() :: binary()
+
+  @typedoc """
+  The destination platform type for the deployment. Valid values
+  are "Server", "Lambda" or "ECS"
+  """
+  @type compute_platform() :: binary()
+
+  @type iam_session_arn() :: binary()
+
+  @type iam_user_arn() :: binary()
+
+  @typedoc """
+  Input a user or session arn
+  """
+  @type input_session_or_user_arn ::
+          %{optional(:iam_session_arn) => binary(), optional(:iam_user_arn) => binary()}
+          | [{:iam_session_arn | :iam_user_arn, binary()}]
+
+  @typedoc """
+  Information about a tag.
+
+  - key - the tag's key
+  - value - the tag's value
+  """
+  @type tag :: {key :: atom() | binary(), value :: binary()}
+
+  @typedoc """
+  Some functions take only  an (optional) paging argument. Paging
+  is done by passing in the "nextToken" returned by a previous call
+  to the API endpoint. The value can be passed in as a keyword list,
+  a Map, or a tuple.
+  """
+  @type paging_options :: [{:next_token, binary()}] | %{optional(:next_token) => binary()} | {:next_token, binary()}
+
+  @typedoc """
+  Information about the location of application artifacts stored in
+  Amazon S3.
+
+  - bucket - The name of the Amazon S3 bucket where the application
+    revision is stored.
+  - bundle_type - The file type of the application revision. Must be
+    one of the following: "tar", "tgz", "zip", "YAML", "JSON".
+  - e_tag - The ETag of the Amazon S3 object that represents the bundled
+    artifacts for the application revision. If the ETag is not specified
+    as an input parameter, ETag validation of the object is skipped.
+  - key - The name of the Amazon S3 object that represents the bundled
+    artifacts for the application revision.
+  - version - A specific version of the Amazon S3 object that represents
+    the bundled artifacts for the application revision. If the version is
+    not specified, the system uses the most recent version by default.
+  """
+  @type s3_location() :: %{
+          optional(:bucket) => binary(),
+          optional(:bundle_type) => binary(),
+          optional(:e_tag) => binary(),
+          optional(:key) => binary(),
+          optional(:version) => binary()
+        }
+
+  @typedoc """
+  A revision for an AWS Lambda or Amazon ECS deployment that is a YAML-formatted
+  or JSON-formatted string. For AWS Lambda and Amazon ECS deployments, the revision
+  is the same as the AppSpec file. This method replaces the deprecated
+  RawString data type.
+  """
+  @type app_spec_content() :: %{
+          optional(:sha256) => binary(),
+          optional(:content) => binary()
+        }
+
+  @typedoc """
+  Information about the location of application artifacts stored in GitHub.
+
+  - repository - The GitHub account and repository pair that stores a reference
+    to the commit that represents the bundled artifacts for the application
+    revision. Specified as account/repository.
+  - commit_id - The SHA1 commit ID of the GitHub commit that represents the
+    bundled artifacts for the application revision.
+  """
+  @type git_hub_location() :: %{
+          optional(:repository) => binary(),
+          optional(:commit_id) => binary()
+        }
+
+  @typedoc """
+  Information about the location of an application revision
+  """
+  @type revision_location() :: %{
+          optional(:revision_type) => binary(),
+          optional(:s3_location) => s3_location(),
+          optional(:git_hub_location) => git_hub_location(),
+          optional(:app_spec_content) => app_spec_content()
+        }
+
+  @typedoc """
+  Information about an EC2 tag filter.
+
+  - key - The tag filter key
+  - type - The tag filter type. Valid values: "KEY_ONLY",
+    "VALUE_ONLY", "KEY_AND_VALUE"
+  """
+  @type ec2_tag_filter() :: %{
+          optional(:key) => binary(),
+          optional(:value) => binary(),
+          optional(:type) => binary()
+        }
+
+  @typedoc """
+  Information about groups of Amazon EC2 instance tags.
+  """
+  @type ec2_tag_set() :: %{
+          optional(:ec2_tag_set_list) => [ec2_tag_filter()]
+        }
+
+  @typedoc """
+  Information about the instances to be used in the replacement
+  environment in a blue/green deployment.
+  """
+  @type target_instances() :: %{
+          optional(:tag_filters) => [ec2_tag_filter()],
+          optional(:auto_scaling_groups) => [binary()],
+          optional(:ec2_tag_set) => ec2_tag_set()
+        }
+
+  @typedoc """
+  Information about a configuration for automatically rolling back
+  to a previous version of an application revision when a deployment
+  is not completed successfully.
+
+  - enabled - Indicates whether a defined automatic rollback
+    configuration is currently enabled.
+  - events - The event type or types that trigger a rollback. Valid
+    values are: "DEPLOYMENT_FAILURE", "DEPLOYMENT_STOP_ON_ALARM",
+    "DEPLOYMENT_STOP_ON_REQUEST"
+  """
+  @type auto_rollback_configuration() :: %{
+          optional(:enabled) => boolean(),
+          optional(:events) => [binary()]
+        }
+
+  @typedoc """
+  Information about an alarm.
+
+  - name - The name of the alarm. Maximum length is 255 characters.
+    Each alarm name can be used only once in a list of alarms.
+  """
+  @type alarm() :: %{
+          optional(:name) => binary()
+        }
+
+  @typedoc """
+  Information about alarms associated with a deployment or
+  deployment group
+
+  - alarms - A list of alarms configured for the deployment or
+    deployment group. A maximum of 10 alarms can be added.
+  - enabled - Indicates whether the alarm configuration is enabled.
+  - ignore_poll_alarm_failure - Indicates whether a deployment should
+    continue if information about the current state of alarms cannot
+    be retrieved from Amazon CloudWatch. The default value is false.
+  """
+  @type alarm_configuration() :: %{
+          optional(:alarms) => [alarm()],
+          optional(:enabled) => boolean(),
+          optional(:ignore_poll_alarm_failure) => boolean()
+        }
+
+  @typedoc """
+  Optional input to the `create_deployment/2` function
+
+  The required application name is passed in as the first argument
+  separately from the map.
+  """
+  @type input_create_deployment() :: %{
+          optional(:deployment_group_name) => binary(),
+          optional(:revision) => revision_location(),
+          optional(:deployment_config_name) => deployment_config_name(),
+          optional(:description) => binary(),
+          optional(:ignore_application_stop_failures) => boolean(),
+          optional(:target_instances) => target_instances(),
+          optional(:auto_rollback_configuration) => auto_rollback_configuration(),
+          optional(:update_outdated_instances_only) => boolean(),
+          optional(:file_exists_behavior) => binary(),
+          optional(:override_alarm_configuration) => alarm_configuration()
+        }
+
+  @typedoc """
+  Information about a time range.
+  """
+  @type time_range :: %{optional(:start) => binary(), optional(:end) => binary()}
+
+  @typedoc """
+  Optional input to the `list_deployments/1` function
+  """
+  @type input_list_deployments ::
+          [
+            application_name: application_name(),
+            deployment_group_name: deployment_group_name(),
+            include_only_statuses: [binary, ...],
+            create_time_range: time_range(),
+            next_token: binary
+          ]
+          | %{
+              optional(:application_name) => application_name(),
+              optional(:deployment_group_name) => deployment_group_name(),
+              optional(:include_only_statuses) => [binary()],
+              optional(:create_time_range) => time_range(),
+              optional(:next_token) => binary()
+            }
+
+  @typedoc """
+  Optional input to the `list_deployment_instances/2` function
+  """
+  @type input_list_deployment_instances ::
+          [
+            instance_status_filter: [binary, ...],
+            instance_type_filter: [binary, ...],
+            next_token: binary
+          ]
+          | %{
+              optional(:instance_status_filter) => [binary()],
+              optional(:instance_type_filter) => [binary()],
+              optional(:next_token) => binary()
+            }
 
   @doc """
   Lists the applications registered with the applicable IAM user or AWS account.
@@ -45,15 +314,28 @@ defmodule ExAws.CodeDeploy do
         service: :codedeploy,
         before_request: nil
       }
+
+      iex> ExAws.CodeDeploy.list_applications([{:next_token, "AB1234Z6921"}])
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"nextToken" => "AB1234Z6921"},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.ListApplications"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
-  @type tag :: {key :: atom, value :: binary}
-  @type paging_options :: [
-          {:next_token, binary}
-        ]
   @spec list_applications() :: ExAws.Operation.JSON.t()
-  @spec list_applications(opts :: paging_options) :: ExAws.Operation.JSON.t()
+  @spec list_applications(paging_options()) :: ExAws.Operation.JSON.t()
   def list_applications(opts \\ []) do
-    opts |> camelize_keys() |> request(:list_applications)
+    opts |> Utils.build_paging() |> request(:list_applications)
   end
 
   @doc """
@@ -61,7 +343,9 @@ defmodule ExAws.CodeDeploy do
 
   ## Examples
 
-      iex> ExAws.CodeDeploy.add_tags_to_on_premises_instances(["i-abcdefgh"], [{"key1", "value"}, {"key2", "value"}])
+      iex> tags = [{"key1", "value"}, {"key2", "value"}]
+      iex> instances = ["i-1234", "i-59922"]
+      iex> ExAws.CodeDeploy.add_tags_to_on_premises_instances(instances, tags)
       %ExAws.Operation.JSON{
         stream_builder: nil,
         http_method: :post,
@@ -69,10 +353,10 @@ defmodule ExAws.CodeDeploy do
         error_parser: &Function.identity/1,
         path: "/",
         data: %{
-          "instanceNames" => ["i-abcdefgh"],
+          "instanceNames" => ["i-1234", "i-59922"],
           "tags" => [
-            %{"Key" => "key2", "Value" => "value"},
-            %{"Key" => "key1", "Value" => "value"}
+            %{"Key" => "key1", "Value" => "value"},
+            %{"Key" => "key2", "Value" => "value"}
           ]
         },
         params: %{},
@@ -84,9 +368,9 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  def add_tags_to_on_premises_instances(instance_names, tags)
-      when is_list(tags) and is_list(instance_names) do
-    api_tags = tags |> Enum.reduce([], fn {k, v}, acc -> [%{"Key" => k, "Value" => v} | acc] end)
+  @spec add_tags_to_on_premises_instances([instance_name()], [tag()]) :: ExAws.Operation.JSON.t()
+  def add_tags_to_on_premises_instances(instance_names, tags) when is_list(instance_names) do
+    api_tags = build_tags(tags)
 
     %{"instanceNames" => instance_names, "tags" => api_tags}
     |> request(:add_tags_to_on_premises_instances)
@@ -97,7 +381,9 @@ defmodule ExAws.CodeDeploy do
 
   ## Examples
 
-      iex> ExAws.CodeDeploy.batch_get_deployment_groups("my-codedeploy-application", ["my-deploy-group1", "my-deploy-group2"])
+      iex> application_name = "TestApp-us-east-1"
+      iex> deployment_group_names = ["dep-group-def-456", "dep-group-jkl-234"]
+      iex> ExAws.CodeDeploy.batch_get_deployment_groups(application_name, deployment_group_names)
       %ExAws.Operation.JSON{
         stream_builder: nil,
         http_method: :post,
@@ -105,8 +391,8 @@ defmodule ExAws.CodeDeploy do
         error_parser: &Function.identity/1,
         path: "/",
         data: %{
-          "applicationName" => "my-codedeploy-application",
-          "deploymentGroupNames" => ["my-deploy-group1", "my-deploy-group2"]
+          "applicationName" => "TestApp-us-east-1",
+          "deploymentGroupNames" => ["dep-group-def-456", "dep-group-jkl-234"]
         },
         params: %{},
         headers: [
@@ -117,13 +403,15 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  def batch_get_deployment_groups(application_name, deployment_group_names) do
+  @spec batch_get_deployment_groups(application_name(), [deployment_group_name()]) :: ExAws.Operation.JSON.t()
+  def batch_get_deployment_groups(application_name, deployment_group_names) when is_list(deployment_group_names) do
     %{"applicationName" => application_name, "deploymentGroupNames" => deployment_group_names}
     |> request(:batch_get_deployment_groups)
   end
 
   @doc """
-  Gets information about one or more applications.
+  Gets information about one or more applications. The maximum number of applications that can be
+  returned is 100.
 
   ## Examples
 
@@ -144,14 +432,15 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @spec batch_get_applications([binary, ...]) :: ExAws.Operation.JSON.t()
-  def batch_get_applications(app_names) when is_list(app_names) do
-    %{"applicationNames" => app_names}
+  @spec batch_get_applications([application_name()]) :: ExAws.Operation.JSON.t()
+  def batch_get_applications(application_names) when is_list(application_names) do
+    %{"applicationNames" => application_names}
     |> request(:batch_get_applications)
   end
 
   @doc """
-  Gets information about one or more deployments.
+  Gets information about one or more deployments. The maximum number of deployments that can be
+  returned is 25.
 
   ## Examples
 
@@ -172,7 +461,7 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @spec batch_get_deployments([binary, ...]) :: ExAws.Operation.JSON.t()
+  @spec batch_get_deployments([deployment_id()]) :: ExAws.Operation.JSON.t()
   def batch_get_deployments(deployment_ids) when is_list(deployment_ids) do
     %{"deploymentIds" => deployment_ids}
     |> request(:batch_get_deployments)
@@ -187,6 +476,7 @@ defmodule ExAws.CodeDeploy do
   by registering instances in the replacement environment with the load
   balancer, can start as soon as all instances have a status of Ready.)
   """
+  @spec continue_deployment(deployment_id()) :: ExAws.Operation.JSON.t()
   def continue_deployment(deployment_id) do
     %{"deploymentId" => deployment_id}
     |> request(:continue_deployment)
@@ -195,8 +485,12 @@ defmodule ExAws.CodeDeploy do
   @doc """
   Creates an Application
 
-  application_name must be unique with the applicable IAM user or AWS account.
-  compute_platform Lambda or Server.
+  - application_name - Required. must be unique with the applicable IAM user or AWS account.
+  - compute_platform - Optional. The destination platform type for the deployment. Valid values
+    are "Server", "Lambda" or "ECS"
+  - tags - Optional. The metadata that you apply to CodeDeploy applications to help you
+    organize and categorize them. Each tag consists of a key and an optional value,
+    both of which you define.
 
   ## Examples:
 
@@ -207,7 +501,36 @@ defmodule ExAws.CodeDeploy do
         parser: &Function.identity/1,
         error_parser: &Function.identity/1,
         path: "/",
-        data: %{"applicationName" => "TestDeploy", "computePlatform" => "Server"},
+        data: %{
+          "applicationName" => "TestDeploy",
+          "computePlatform" => "Server",
+          "tags" => []
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.CreateApplication"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+
+      iex> tags = [{"key1", "value"}, {"key2", "value"}]
+      iex> ExAws.CodeDeploy.create_application("TestDeploy", "Server", tags)
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "applicationName" => "TestDeploy",
+          "computePlatform" => "Server",
+          "tags" => [
+            %{"Key" => "key1", "Value" => "value"},
+            %{"Key" => "key2", "Value" => "value"}
+          ]
+        },
         params: %{},
         headers: [
           {"x-amz-target", "CodeDeploy_20141006.CreateApplication"},
@@ -217,10 +540,9 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @spec create_application(binary) :: ExAws.Operation.JSON.t()
-  @spec create_application(binary, binary) :: ExAws.Operation.JSON.t()
-  def create_application(application_name, compute_platform \\ "Server") do
-    %{"applicationName" => application_name, "computePlatform" => compute_platform}
+  @spec create_application(application_name(), compute_platform(), [tag()]) :: ExAws.Operation.JSON.t()
+  def create_application(application_name, compute_platform \\ "Server", tags \\ []) do
+    %{"applicationName" => application_name, "computePlatform" => compute_platform, "tags" => build_tags(tags)}
     |> request(:create_application)
   end
 
@@ -230,6 +552,7 @@ defmodule ExAws.CodeDeploy do
   Caller is responsible for defining the deployment_details in a manner that
   matches what Amazon expects. See unit test.
   """
+  @spec create_deployment(application_name(), input_create_deployment()) :: ExAws.Operation.JSON.t()
   def create_deployment(application_name, deployment_details \\ %{}) do
     Map.merge(deployment_details, %{"applicationName" => application_name})
     |> request(:create_deployment)
@@ -260,7 +583,7 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @spec delete_application(binary) :: ExAws.Operation.JSON.t()
+  @spec delete_application(application_name()) :: ExAws.Operation.JSON.t()
   def delete_application(application_name) do
     %{"applicationName" => application_name}
     |> request(:delete_application)
@@ -291,7 +614,7 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @spec delete_deployment_config(binary) :: ExAws.Operation.JSON.t()
+  @spec delete_deployment_config(deployment_config_name()) :: ExAws.Operation.JSON.t()
   def delete_deployment_config(deployment_config_name) do
     %{"deploymentConfigName" => deployment_config_name}
     |> request(:delete_deployment_config)
@@ -319,7 +642,7 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @spec delete_deployment_group(binary, binary) :: ExAws.Operation.JSON.t()
+  @spec delete_deployment_group(application_name(), deployment_group_name()) :: ExAws.Operation.JSON.t()
   def delete_deployment_group(application_name, deployment_group_name) do
     %{"applicationName" => application_name, "deploymentGroupName" => deployment_group_name}
     |> request(:delete_deployment_group)
@@ -347,7 +670,7 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @spec delete_git_hub_account_token(binary) :: ExAws.Operation.JSON.t()
+  @spec delete_git_hub_account_token(token_name()) :: ExAws.Operation.JSON.t()
   def delete_git_hub_account_token(token_name) do
     %{"tokenName" => token_name}
     |> request(:delete_git_hub_account_token)
@@ -375,7 +698,7 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @spec deregister_on_premises_instance(binary) :: ExAws.Operation.JSON.t()
+  @spec deregister_on_premises_instance(instance_name()) :: ExAws.Operation.JSON.t()
   def deregister_on_premises_instance(instance_name) do
     %{"instanceName" => instance_name}
     |> request(:deregister_on_premises_instance)
@@ -384,9 +707,9 @@ defmodule ExAws.CodeDeploy do
   @doc """
   Gets information about one or more instance that are part of a deployment group.
 
-  You can use `list_deployment_instances/1` to get a list of instances
-  deployed to by a deployment_id but you need this function get details on
-  the instances like startTime, endTime, lastUpdatedAt and instanceType.
+  You can use `list_deployment_instances/1` to get a list of instances deployed to by a
+  `t:deployment_id/0` but you need this function get details on the instances like startTime,
+  endTime, lastUpdatedAt and instanceType.
 
   ## Examples
 
@@ -407,6 +730,8 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
+  # @deprecated "Use batch_get_deployment_targets/2 instead"
+  @spec batch_get_deployment_instances(deployment_id(), [instance_id()]) :: ExAws.Operation.JSON.t()
   def batch_get_deployment_instances(deployment_id, instance_ids) when is_list(instance_ids) do
     %{"deploymentId" => deployment_id, "instanceIds" => instance_ids}
     |> request(:batch_sget_deployment_instances)
@@ -434,7 +759,7 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @spec batch_get_on_premises_instances([binary, ...]) :: ExAws.Operation.JSON.t()
+  @spec batch_get_on_premises_instances([instance_name()]) :: ExAws.Operation.JSON.t()
   def batch_get_on_premises_instances(instance_names) when is_list(instance_names) do
     %{"instanceNames" => instance_names}
     |> request(:batch_get_on_premises_instances)
@@ -462,10 +787,9 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @spec list_deployment_configs() :: ExAws.Operation.JSON.t()
-  @spec list_deployment_configs(opts :: paging_options) :: ExAws.Operation.JSON.t()
+  @spec list_deployment_configs(paging_options()) :: ExAws.Operation.JSON.t()
   def list_deployment_configs(opts \\ []) do
-    opts |> camelize_keys() |> request(:list_deployment_configs)
+    opts |> Utils.build_paging() |> request(:list_deployment_configs)
   end
 
   @doc """
@@ -500,12 +824,10 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @spec list_deployment_groups(application_name :: binary) :: ExAws.Operation.JSON.t()
-  @spec list_deployment_groups(application_name :: binary, opts :: paging_options) ::
-          ExAws.Operation.JSON.t()
+  @spec list_deployment_groups(application_name(), paging_options()) :: ExAws.Operation.JSON.t()
   def list_deployment_groups(application_name, opts \\ []) do
     opts
-    |> camelize_keys()
+    |> Utils.build_paging()
     |> Map.merge(%{"applicationName" => application_name})
     |> request(:list_deployment_groups)
   end
@@ -535,18 +857,9 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @type time_range :: %{optional(binary) => binary}
-  @type list_deployments_options :: [
-          application_name: binary,
-          deployment_group_name: binary,
-          include_only_statuses: [binary, ...],
-          create_time_range: map(),
-          next_token: binary
-        ]
-  @spec list_deployments() :: ExAws.Operation.JSON.t()
-  @spec list_deployments(opts :: list_deployments_options) :: ExAws.Operation.JSON.t()
+  @spec list_deployments(input_list_deployments()) :: ExAws.Operation.JSON.t()
   def list_deployments(opts \\ []) do
-    opts |> camelize_keys(spec: @key_spec) |> request(:list_deployments)
+    opts |> Utils.keyword_to_map() |> Utils.camelize_map() |> request(:list_deployments)
   end
 
   @doc """
@@ -571,7 +884,7 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @spec get_application(application_name :: binary) :: ExAws.Operation.JSON.t()
+  @spec get_application(application_name()) :: ExAws.Operation.JSON.t()
   def get_application(application_name) do
     %{"applicationName" => application_name}
     |> request(:get_application)
@@ -602,6 +915,7 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
+  @spec get_application_revision(application_name(), revision_location()) :: ExAws.Operation.JSON.t()
   def get_application_revision(application_name, revision \\ %{}) do
     Map.merge(revision, %{"applicationName" => application_name})
     |> request(:get_application_revision)
@@ -629,7 +943,7 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @spec get_deployment(deployment_id :: binary) :: ExAws.Operation.JSON.t()
+  @spec get_deployment(deployment_id()) :: ExAws.Operation.JSON.t()
   def get_deployment(deployment_id) do
     %{"deploymentId" => deployment_id}
     |> request(:get_deployment)
@@ -638,7 +952,7 @@ defmodule ExAws.CodeDeploy do
   @doc """
   Gets information about a deployment configuration.
   """
-  @spec get_deployment_config(deployment_config_name :: binary) :: ExAws.Operation.JSON.t()
+  @spec get_deployment_config(deployment_config_name()) :: ExAws.Operation.JSON.t()
   def get_deployment_config(deployment_config_name) do
     %{"deploymentConfigName" => deployment_config_name}
     |> request(:get_deployment_config)
@@ -669,8 +983,7 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @spec get_deployment_group(application_name :: binary, deployment_group_name :: binary) ::
-          ExAws.Operation.JSON.t()
+  @spec get_deployment_group(application_name(), deployment_group_name()) :: ExAws.Operation.JSON.t()
   def get_deployment_group(application_name, deployment_group_name) do
     %{"applicationName" => application_name, "deploymentGroupName" => deployment_group_name}
     |> request(:get_deployment_group)
@@ -701,8 +1014,7 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @spec get_deployment_instance(deployment_id :: binary, instance_id :: binary) ::
-          ExAws.Operation.JSON.t()
+  @spec get_deployment_instance(deployment_id(), instance_id()) :: ExAws.Operation.JSON.t()
   def get_deployment_instance(deployment_id, instance_id) do
     %{"deploymentId" => deployment_id, "instanceId" => instance_id}
     |> request(:get_deployment_instance)
@@ -711,7 +1023,7 @@ defmodule ExAws.CodeDeploy do
   @doc """
   Gets information about an on-premises instance
   """
-  @spec get_on_premises_instance(instance_name :: binary) :: ExAws.Operation.JSON.t()
+  @spec get_on_premises_instance(instance_name()) :: ExAws.Operation.JSON.t()
   def get_on_premises_instance(instance_name) do
     %{"instanceName" => instance_name}
     |> request(:get_on_premises_instance)
@@ -739,17 +1051,12 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @type list_deployment_instances_opts :: [
-          instance_status_filter: [binary, ...],
-          instance_type_filter: [binary, ...],
-          next_token: binary
-        ]
-  @spec list_deployment_instances(deployment_id :: binary) :: ExAws.Operation.JSON.t()
-  @spec list_deployment_instances(deployment_id :: binary, opts :: list_deployment_instances_opts) ::
-          ExAws.Operation.JSON.t()
+  @spec list_deployment_instances(deployment_id()) :: ExAws.Operation.JSON.t()
+  @spec list_deployment_instances(deployment_id(), input_list_deployment_instances()) :: ExAws.Operation.JSON.t()
   def list_deployment_instances(deployment_id, opts \\ []) do
     opts
-    |> camelize_keys(spec: @key_spec)
+    |> Utils.keyword_to_map()
+    |> Utils.camelize_map()
     |> Map.merge(%{"deploymentId" => deployment_id})
     |> request(:list_deployment_instances)
   end
@@ -777,6 +1084,7 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
+  @spec stop_deployment(deployment_id(), boolean() | nil) :: ExAws.Operation.JSON.t()
   def stop_deployment(deployment_id, auto_rollback_enabled \\ nil) do
     %{"deploymentId" => deployment_id}
     |> add_auto_rollback(auto_rollback_enabled)
@@ -791,7 +1099,8 @@ defmodule ExAws.CodeDeploy do
   @spec put_lifecycle_event_hook_execution_status(any(), any()) :: ExAws.Operation.JSON.t()
   def put_lifecycle_event_hook_execution_status(deployment_id, opts \\ []) do
     opts
-    |> camelize_keys()
+    |> Utils.keyword_to_map()
+    |> Utils.camelize_map()
     |> Map.merge(%{"deploymentId" => deployment_id})
     |> request(:put_lifecycle_event_hook_execution_status)
   end
@@ -799,11 +1108,36 @@ defmodule ExAws.CodeDeploy do
   @doc """
   Registers an on-premises instance.
 
-  Only one IAM ARN (an IAM session ARN or IAM user ARN) is supported in the request. You cannot use both.
+  Only one IAM ARN (an IAM session ARN or IAM user ARN) is supported in the request. You cannot use
+  both.
+
+  ## Examples
+
+      iex> arn_info = %{iam_session_arn: "3242342ABC"}
+      iex> ExAws.CodeDeploy.register_on_premises_instance("i-12345", arn_info)
+      ExAws.CodeDeploy.register_on_premises_instance("i-12345", %{iam_session_arn: "3242342ABC"})
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"iamSessionArn" => "3242342ABC", "instanceName" => "i-12345"},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.RegisterOnPremisesInstance"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
+  @spec register_on_premises_instance(instance_name(), input_session_or_user_arn()) ::
+          ExAws.Operation.JSON.t()
   def register_on_premises_instance(instance_name, opts \\ []) do
     opts
-    |> camelize_keys()
+    |> Utils.keyword_to_map()
+    |> Utils.camelize_map()
     |> Map.merge(%{"instanceName" => instance_name})
     |> request(:register_on_premises_instance)
   end
@@ -811,7 +1145,8 @@ defmodule ExAws.CodeDeploy do
   @doc """
   Changes the name of an application.
   """
-  def update_application(application_name, new_application_name) do
+  @spec update_application(application_name(), application_name()) :: ExAws.Operation.JSON.t()
+  def(update_application(application_name, new_application_name)) do
     %{"applicationName" => application_name, "newApplicationName" => new_application_name}
     |> request(:update_application)
   end
@@ -825,8 +1160,14 @@ defmodule ExAws.CodeDeploy do
 
   defp add_auto_rollback(acc, _), do: acc
 
+  defp build_tags(tags) when is_list(tags) do
+    Enum.map(tags, fn {k, v} -> %{"Key" => k, "Value" => v} end)
+  end
+
+  defp build_tags(_tags), do: []
+
   defp request(data, action, opts \\ %{}) do
-    operation = action |> Atom.to_string() |> Macro.camelize()
+    operation = Utils.camelize(action, :upper)
 
     ExAwsOperationJSON.new(
       :codedeploy,
