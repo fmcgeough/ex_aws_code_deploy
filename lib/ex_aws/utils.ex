@@ -68,6 +68,10 @@ defmodule ExAws.CodeDeploy.Utils do
     end
   end
 
+  def camelize_map(a_list, first_word_capitalization) when is_list(a_list) do
+    Enum.map(a_list, &camelize_map(&1, first_word_capitalization))
+  end
+
   def camelize_map(val, _first_word_capitalization), do: val
 
   @doc """
@@ -151,4 +155,37 @@ defmodule ExAws.CodeDeploy.Utils do
   def build_paging(opts) do
     build_paging([opts])
   end
+
+  @doc """
+  Take a list of tag and convert it into a format suitable for
+  API. Invalid tags are skipped. The code is forgiving of input.
+  Elements in list can be a Map with "Key" and "Value"
+  of key and value or a list where each element
+
+  ## Examples
+
+      iex> ExAws.CodeDeploy.Utils.build_tags([])
+      []
+
+      iex> ExAws.CodeDeploy.Utils.build_tags([{:my_key, "value1"}])
+      [%{"Key" => "my_key", "Value" => "value1"}]
+  """
+  def build_tags(tags) when is_list(tags) do
+    tags
+    |> Enum.map(fn tag ->
+      case tag do
+        {k, v} when is_atom(k) or (is_binary(k) and is_binary(v)) ->
+          %{"Key" => to_string(k), "Value" => v}
+
+        %{"Key" => k, "Value" => v} when is_atom(k) or (is_binary(k) and is_binary(v)) ->
+          %{"Key" => to_string(k), "Value" => v}
+
+        _ ->
+          nil
+      end
+    end)
+    |> Enum.filter(&(&1 != nil))
+  end
+
+  def build_tags(_tags), do: []
 end

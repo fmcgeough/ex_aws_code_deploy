@@ -60,6 +60,27 @@ defmodule ExAws.CodeDeploy do
   @type instance_id() :: binary()
 
   @typedoc """
+  The unique IDs of the deployment targets. The compute platform of the deployment determines the
+  type of the targets and their formats.
+
+  - For deployments that use the EC2/On-premises compute platform, the target IDs are Amazon EC2 or
+    on-premises instances IDs, and their target type is "instanceTarget".
+  - For deployments that use the AWS Lambda compute platform, the target IDs are the names of Lambda
+    functions, and their target type is "instanceTarget".
+  - For deployments that use the Amazon ECS compute platform, the target IDs are pairs of Amazon ECS
+    clusters and services specified using the format <clustername>:<servicename>. Their target type
+    is "ecsTarget".
+  - For deployments that are deployed with AWS CloudFormation, the target IDs are CloudFormation
+    stack IDs. Their target type is "cloudFormationTarget".
+  """
+  @type target_id() :: binary()
+
+  @typedoc """
+  A list of `t:target_id/0`
+  """
+  @type target_ids() :: [target_id()]
+
+  @typedoc """
   Name of the deployment group. Minimum length of 1. Maximum length of 100.
   """
   @type deployment_group_name() :: binary()
@@ -80,6 +101,12 @@ defmodule ExAws.CodeDeploy do
   @type iam_user_arn() :: binary()
 
   @typedoc """
+  A service role Amazon Resource Name (ARN) that allows AWS CodeDeploy to act on the user's behalf
+  when interacting with AWS services.
+  """
+  @type service_role_arn() :: binary()
+
+  @typedoc """
   Input a user or session arn
   """
   @type input_session_or_user_arn ::
@@ -92,7 +119,170 @@ defmodule ExAws.CodeDeploy do
   - key - the tag's key
   - value - the tag's value
   """
-  @type tag :: {key :: atom() | binary(), value :: binary()}
+  @type tag :: %{
+          optional(:key) => binary(),
+          optional(:value) => binary()
+        }
+
+  @typedoc """
+  A list of tags
+  """
+  @type tags() :: [tag()]
+
+  @typedoc """
+  Specifies the tag filter type
+
+  Allowed values are: "KEY_ONLY", "VALUE_ONLY", or "KEY_AND_VALUE"
+  """
+  @type tag_filter_type() :: binary()
+
+  @typedoc """
+  Information about an on-premises instance tag filter.
+
+  - key - The on-premises instance tag filter key
+  - value - The on-premises instance tag filter value
+  - type - The on-premises instance tag filter type:
+    - "KEY_ONLY": Key only.
+    - "VALUE_ONLY": Value only.
+    - "KEY_AND_VALUE": Key and value.
+  """
+  @type tag_filter() :: %{
+          optional(:key) => binary(),
+          optional(:value) => binary(),
+          optional(:type) => tag_filter_type()
+        }
+
+  @typedoc """
+  List of `t:tag_filter/0`
+  """
+  @type tag_filter_list() :: [tag_filter()]
+
+  @typedoc """
+  Information about groups of on-premises instance tags.
+
+  on_premises_tag_set_list - A list that contains other lists of on-premises instance tag groups.
+  For an instance to be included in the deployment group, it must be identified by all of the tag
+  groups in the list
+  """
+  @type on_premises_tag_set() :: %{
+          on_premises_tag_set_list: [tag_filter()]
+        }
+
+  @typedoc """
+  Information about an Auto Scaling group
+
+  - hook - The name of the launch hook that CodeDeploy installed into the Auto Scaling group
+  - name - The Auto Scaling group name
+  - termination_hook -The name of the termination hook that CodeDeploy installed into the Auto
+    Scaling group
+  """
+  @type auto_scaling_group() :: %{
+          optional(:hook) => binary(),
+          optional(:name) => binary(),
+          optional(:termination_hook) => binary()
+        }
+
+  @typedoc """
+  A trigger event
+
+  Valid Values: "DeploymentStart", "DeploymentSuccess", "DeploymentFailure", "DeploymentStop",
+  "DeploymentRollback", "DeploymentReady", "InstanceStart", "InstanceSuccess", "InstanceFailure", or
+  "InstanceReady"
+  """
+  @type trigger_event() :: binary()
+
+  @typedoc """
+  Indicates what happens when new Amazon EC2 instances are launched mid-deployment and do not
+  receive the deployed application revision.
+
+  If this option is set to "UPDATE" or is unspecified, CodeDeploy initiates one or more 'auto-update
+  outdated instances' deployments to apply the deployed application revision to the new Amazon EC2
+  instances.
+
+  If this option is set to "IGNORE", CodeDeploy does not initiate a deployment to update the new
+  Amazon EC2 instances. This may result in instances having different revisions.
+
+  Valid values: "IGNORE" or "UPDATE"
+  """
+  @type outdated_instances_strategy() :: binary()
+
+  @typedoc """
+  Information about the type of deployment, either in-place or blue/green, you want to run and
+  whether to route deployment traffic behind a load balancer.
+
+  - deployment_option - Indicates whether to route deployment traffic behind a load balancer.
+    Valid Values: "WITH_TRAFFIC_CONTROL" or "WITHOUT_TRAFFIC_CONTROL"
+  - deployment_type - Indicates whether to run an in-place deployment or a blue/green deployment.
+    Value values: "IN_PLACE" or "BLUE_GREEN"
+  """
+  @type deployment_style() :: %{
+          optional(:deployment_option) => binary(),
+          optional(:deployment_type) => binary()
+        }
+
+  @typedoc """
+  Information about how traffic is rerouted to instances in a replacement environment in a
+  blue/green deployment
+
+  - action_on_timeout - Information about when to reroute traffic from an original environment to a
+  replacement environment in a blue/green deployment. Value values: "CONTINUE_DEPLOYMENT" or
+  "STOP_DEPLOYMENT".
+    - "CONTINUE_DEPLOYMENT": Register new instances with the load balancer immediately after the
+    new application revision is installed on the instances in the replacement environment.
+    -"STOP_DEPLOYMENT": Do not register new instances with a load balancer unless traffic
+    rerouting is started using ContinueDeployment. If traffic rerouting is not started before
+    the end of the specified wait period, the deployment status is changed to Stopped.
+  """
+  @type deployment_ready_option() :: %{
+          optional(:action_on_timeout) => binary(),
+          optional(:wait_time_in_minutes) => integer()
+        }
+
+  @typedoc """
+  Information about the instances that belong to the replacement environment in a blue/green
+  deployment.
+
+  - action - The method used to add instances to a replacement environment. Valid values are
+    "DISCOVER_EXISTING" or "COPY_AUTO_SCALING_GROUP"
+    - "DISCOVER_EXISTING": Use instances that already exist or will be created manually.
+    - "COPY_AUTO_SCALING_GROUP": Use settings from a specified Auto Scaling group to define and
+      create instances in a new Auto Scaling group.
+  """
+  @type green_fleet_provisioning_option() :: %{
+          optional(:action) => binary()
+        }
+
+  @typedoc """
+  This parameter only applies if you are using CodeDeploy with Amazon EC2 Auto Scaling.
+
+  Set to true to have CodeDeploy install a termination hook into your Auto Scaling group when you
+  create a deployment group. When this hook is installed, CodeDeploy will perform termination
+  deployments.
+  """
+  @type terminate_blue_instances_on_deployment_success() :: boolean()
+
+  @type blue_green_deployment_configuration() :: %{
+          optional(:deployment_ready_option) => deployment_ready_option(),
+          optional(:green_fleet_provisioning_option) => green_fleet_provisioning_option(),
+          optional(:terminate_blue_instances_on_deployment_success) => terminate_blue_instances_on_deployment_success()
+        }
+
+  @typedoc """
+  Information about notification triggers for the deployment group
+
+  - trigger_events - The event type or types for which notifications are triggered. A list
+    of `t:trigger_event/0`
+  """
+  @type trigger_configuration() :: %{
+          optional(:trigger_events) => [trigger_event()],
+          optional(:trigger_name) => binary(),
+          optional(:trigger_target_arn) => binary()
+        }
+
+  @typedoc """
+  A list of `t:trigger_configuration/0`
+  """
+  @type trigger_configurations() :: [trigger_configuration()]
 
   @typedoc """
   Some functions take only  an (optional) paging argument. Paging
@@ -219,6 +409,97 @@ defmodule ExAws.CodeDeploy do
         }
 
   @typedoc """
+  Specify characteristics of minimum healthy hosts
+
+  - type - The type parameter takes either of the following values:
+    - "HOST_COUNT": The value parameter represents the minimum number of healthy instances as an
+      absolute value.
+    - "FLEET_PERCENT": The value parameter represents the minimum number of healthy instances as a
+      percentage of the total number of instances in the deployment. If you specify FLEET_PERCENT,
+      at the start of the deployment, AWS CodeDeploy converts the percentage to the equivalent
+      number of instances and rounds up fractional instances.
+  - value - The value parameter takes an integer. For example, to set a minimum of 95% healthy
+    instance, specify a type of FLEET_PERCENT and a value of 95.
+  """
+  @type minimim_healthy_hosts() :: %{
+          optional(:type) => binary(),
+          optional(:value) => integer()
+        }
+
+  @typedoc """
+  A configuration that shifts traffic from one version of a Lambda function or ECS task set to
+  another in equal increments, with an equal number of minutes between each increment. The original
+  and target Lambda function versions or ECS task sets are specified in the deployment's AppSpec
+  file
+
+  - linear_interval - The number of minutes between each incremental traffic shift of a
+    TimeBasedLinear deployment.
+  - linear_percentage - The percentage of traffic that is shifted at the start of each increment of
+    a TimeBasedLinear deployment.
+  """
+  @type time_based_linear() :: %{
+          optional(:linear_interval) => integer(),
+          optional(:linear_percentage) => integer()
+        }
+
+  @typedoc """
+  A configuration that shifts traffic from one version of a Lambda function or ECS task set to
+  another in two increments. The original and target Lambda function versions or ECS task sets are
+  specified in the deployment's AppSpec file
+
+  - canary_interval -The number of minutes between the first and second traffic shifts of a
+    TimeBasedCanary deployment.
+  - canary_percentage - The percentage of traffic to shift in the first increment of a
+    TimeBasedCanary deployment.
+  """
+  @type time_based_canary :: %{
+          optional(:canary_interval) => integer(),
+          optional(:canary_percentage) => integer()
+        }
+
+  @typedoc """
+  The configuration that specifies how the deployment traffic is routed
+
+  - type - The type of traffic shifting (TimeBasedCanary or TimeBasedLinear) used by a deployment
+    configuration. Valid values are "TimeBasedCanary", "TimeBasedLinear" or "AllAtOnce"
+  - time_based_canary - `t:time_based_canary/0`
+  - time_based_linear - `t:time_based_linear/0`
+  """
+  @type traffic_routing_config() :: %{
+          optional(:type) => binary(),
+          optional(:time_based_canary) => time_based_canary(),
+          optional(:time_based_linear) => time_based_linear()
+        }
+
+  @typedoc """
+  Configure the ZonalConfig object if you want AWS CodeDeploy to deploy your application to one
+  Availability Zone at a time, within an AWS Region. By deploying to one Availability Zone at a
+  time, you can expose your deployment to a progressively larger audience as confidence in the
+  deployment's performance and viability grows. If you don't configure the ZonalConfig object,
+  CodeDeploy deploys your application to a random selection of hosts across a Region.
+
+  - first_zone_monitor_duration_in_seconds - The period of time, in seconds, that CodeDeploy must
+    wait after completing a deployment to the first Availability Zone. CodeDeploy will wait this
+    amount of time before starting a deployment to the second Availability Zone. You might set this
+    option if you want to allow extra bake time for the first Availability Zone. If you don't
+    specify a value for firstZoneMonitorDurationInSeconds, then CodeDeploy uses the
+    monitorDurationInSeconds value for the first Availability Zone.
+  - minimim_healthy_hosts_per_zone - The number or percentage of instances that must remain
+    available per Availability Zone during a deployment. `t:minimim_healthy_hosts/0`
+  - monitor_duration_in_seconds - The period of time, in seconds, that CodeDeploy must wait after
+    completing a deployment to an Availability Zone. CodeDeploy will wait this amount of time before
+    starting a deployment to the next Availability Zone. Consider adding a monitor duration to give
+    the deployment some time to prove itself (or 'bake') in one Availability Zone before it is
+    released in the next zone. If you don't specify a monitor_duration_in_seconds, CodeDeploy starts
+    deploying to the next Availability Zone immediately.
+  """
+  @type zonal_config() :: %{
+          optional(:first_zone_monitor_duration_in_seconds) => integer(),
+          optional(:minimim_healthy_hosts_per_zone) => minimim_healthy_hosts(),
+          optional(:monitor_duration_in_seconds) => integer()
+        }
+
+  @typedoc """
   Information about alarms associated with a deployment or
   deployment group
 
@@ -254,6 +535,117 @@ defmodule ExAws.CodeDeploy do
           optional(:override_alarm_configuration) => alarm_configuration()
         }
 
+  @typedoc """
+  Optional arguments to the `create_deployment_config/2` function
+  """
+  @type input_create_deployment_config() :: %{
+          optional(:minimim_healthy_hosts) => minimim_healthy_hosts(),
+          optional(:traffic_routing_config) => traffic_routing_config(),
+          optional(:compute_platform) => compute_platform(),
+          optional(:zonal_config) => zonal_config()
+        }
+
+  @typedoc """
+  Information about a Classic Load Balancer in Elastic Load Balancing to use in a deployment.
+  Instances are registered directly with a load balancer, and traffic is routed to the load
+  balancer.
+
+  - name - For blue/green deployments, the name of the Classic Load Balancer that is used to route
+    traffic from original instances to replacement instances in a blue/green deployment. For
+    in-place deployments, the name of the Classic Load Balancer that instances are deregistered from
+    so they are not serving traffic during a deployment, and then re-registered with after the
+    deployment is complete.
+  """
+  @type elb_info() :: %{
+          optional(:name) => binary()
+        }
+
+  @typedoc """
+  Information about a target group in Elastic Load Balancing to use in a deployment. Instances are
+  registered as targets in a target group, and traffic is routed to the target group.
+
+  - name - For blue/green deployments, the name of the target group that instances in the original
+    environment are deregistered from, and instances in the replacement environment are registered
+    with. For in-place deployments, the name of the target group that instances are deregistered
+    from, so they are not serving traffic during a deployment, and then re-registered with after the
+    deployment is complete.
+  """
+  @type target_group_info() :: %{
+          optional(:name) => binary()
+        }
+
+  @typedoc """
+  Information about a listener. The listener contains the path used to route traffic that is
+  received from the load balancer to a target group.
+
+  - listener_arns - The Amazon Resource Name (ARN) of one listener. The listener identifies the
+    route between a target group and a load balancer. This is an array of strings with a maximum
+    size of one.
+  """
+  @type traffic_route() :: %{
+          optional(:listener_arns) => [binary()]
+        }
+
+  @typedoc """
+  Information about two target groups and how traffic is routed during an Amazon ECS deployment. An
+  optional test traffic route can be specified.
+  """
+  @type target_group_pair_info() :: %{
+          optional(:prod_traffic_route) => traffic_route(),
+          optional(:target_groups) => [target_group_info()],
+          optional(:test_traffic_route) => traffic_route()
+        }
+
+  @typedoc """
+  Contains the service and cluster names used to identify an Amazon ECS deployment's target
+
+  - cluster_name - The name of the cluster that the Amazon ECS service is associated with.
+  - service_name - The name of the target Amazon ECS service
+  """
+  @type ecs_service() :: %{
+          optional(:cluster_name) => binary(),
+          optional(:service_name) => binary()
+        }
+
+  @typedoc """
+  A list of `t:ecs_service/0`
+  """
+  @type ecs_services() :: [ecs_service()]
+
+  @typedoc """
+  Information about the Elastic Load Balancing load balancer or target group used in a deployment.
+
+  You can use load balancers and target groups in combination. For example, if you have two Classic
+  Load Balancers, and five target groups tied to an Application Load Balancer, you can specify the
+  two Classic Load Balancers in elb_info_list, and the five target groups in target_group_info_list.
+  """
+  @type load_balancer_info() :: %{
+          optional(:elb_info_list) => [elb_info()],
+          optional(:target_group_info_list) => [target_group_info()],
+          optional(:target_group_pair_info_list) => [target_group_pair_info()]
+        }
+
+  @typedoc """
+  Optional arguments to the `create_deployment_group/4` function
+  """
+  @type input_create_deployment_group() :: %{
+          optional(:deployment_config_name) => deployment_config_name(),
+          optional(:ec2_tag_filters) => [ec2_tag_filter()],
+          optional(:on_premises_instance_tag_filters) => [tag_filter_list()],
+          optional(:auto_scaling_groups) => [auto_scaling_group()],
+          optional(:trigger_configurations) => trigger_configurations(),
+          optional(:alarm_configuration) => alarm_configuration(),
+          optional(:auto_rollback_configuration) => auto_rollback_configuration(),
+          optional(:outdated_instances_strategy) => outdated_instances_strategy(),
+          optional(:deployment_style) => deployment_style(),
+          optional(:blue_green_deployment_configuration) => blue_green_deployment_configuration(),
+          optional(:load_balancer_info) => load_balancer_info(),
+          optional(:ec2_tag_set) => ec2_tag_set(),
+          optional(:ecs_services) => ecs_services(),
+          optional(:on_premises_tag_set) => on_premises_tag_set(),
+          optional(:tags) => tags(),
+          optional(:termination_hook_enabled) => boolean()
+        }
   @typedoc """
   Information about a time range.
   """
@@ -343,6 +735,31 @@ defmodule ExAws.CodeDeploy do
 
   ## Examples
 
+      iex> tags = [%{"Key" => "key1", "Value" => "value"}, %{"Key" => "key2", "Value" => "value"}]
+      iex> instances = ["i-1234", "i-59922"]
+      iex> ExAws.CodeDeploy.add_tags_to_on_premises_instances(instances, tags)
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "instanceNames" => ["i-1234", "i-59922"],
+          "tags" => [
+            %{"Key" => "key1", "Value" => "value"},
+            %{"Key" => "key2", "Value" => "value"}
+          ]
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.AddTagsToOnPremisesInstances"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+
       iex> tags = [{"key1", "value"}, {"key2", "value"}]
       iex> instances = ["i-1234", "i-59922"]
       iex> ExAws.CodeDeploy.add_tags_to_on_premises_instances(instances, tags)
@@ -369,8 +786,8 @@ defmodule ExAws.CodeDeploy do
       }
   """
   @spec add_tags_to_on_premises_instances([instance_name()], [tag()]) :: ExAws.Operation.JSON.t()
-  def add_tags_to_on_premises_instances(instance_names, tags) when is_list(instance_names) do
-    api_tags = build_tags(tags)
+  def add_tags_to_on_premises_instances(instance_names, tags) when is_list(instance_names) and is_list(tags) do
+    api_tags = Utils.build_tags(tags)
 
     %{"instanceNames" => instance_names, "tags" => api_tags}
     |> request(:add_tags_to_on_premises_instances)
@@ -439,6 +856,54 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
+  Gets information about one or more application revisions
+
+  The maximum number of application revisions that can be returned is 25.
+
+  ## Examples
+
+      iex> revisions = [
+      ...>%{
+      ...>  git_hub_location: %{commit_id: "fa85936EXAMPLEa31736c051f10d77297EXAMPLE",
+      ...>  repository: "my-github-token/my-repository"},
+      ...>  revision_type: "GitHub"
+      ...> }]
+      iex> ExAws.CodeDeploy.batch_get_application_revisions("my-codedeploy-application", revisions)
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "applicationName" => "my-codedeploy-application",
+          "revisions" => [
+            %{
+              "gitHubLocation" => %{
+                "commitId" => "fa85936EXAMPLEa31736c051f10d77297EXAMPLE",
+                "repository" => "my-github-token/my-repository"
+              },
+              "revisionType" => "GitHub"
+            }
+          ]
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.BatchGetApplicationRevisions"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+  """
+  @spec batch_get_application_revisions(application_name(), [revision_location()]) :: ExAws.Operation.JSON.t()
+  def batch_get_application_revisions(application_name, revisions) when is_list(revisions) do
+    %{application_name: application_name, revisions: revisions}
+    |> Utils.camelize_map()
+    |> request(:batch_get_application_revisions)
+  end
+
+  @doc """
   Gets information about one or more deployments. The maximum number of deployments that can be
   returned is 25.
 
@@ -465,6 +930,50 @@ defmodule ExAws.CodeDeploy do
   def batch_get_deployments(deployment_ids) when is_list(deployment_ids) do
     %{"deploymentIds" => deployment_ids}
     |> request(:batch_get_deployments)
+  end
+
+  @doc """
+  Returns an array of one or more targets associated with a deployment. This method works with all
+  compute types and should be used instead of the deprecated BatchGetDeploymentInstances. The
+  maximum number of deployment target IDs you can specify is 25.
+
+  The type of targets returned depends on the deployment's compute platform or deployment method:
+
+  - EC2/On-premises: Information about Amazon EC2 instance targets.
+  - AWS Lambda : Information about Lambda functions targets.
+  - Amazon ECS: Information about Amazon ECS service targets.
+  - CloudFormation: Information about targets of blue/green deployments initiated by a
+    CloudFormation stack update.
+
+  ## Examples
+
+      iex> ExAws.CodeDeploy.batch_get_deployment_targets("d-1A2B3C4D5", ["i-01a2b3c4d5e6f1111"])
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "deploymentId" => "d-1A2B3C4D5",
+          "targetIds" => ["i-01a2b3c4d5e6f1111"]
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.BatchGetDeploymentTargets"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+  """
+  @spec batch_get_deployment_targets(deployment_id(), target_ids()) :: ExAws.Operation.JSON.t()
+  def batch_get_deployment_targets(deployment_id, target_ids) when is_list(target_ids) do
+    %{
+      "deploymentId" => deployment_id,
+      "targetIds" => target_ids
+    }
+    |> request(:batch_get_deployment_targets)
   end
 
   @doc """
@@ -542,7 +1051,7 @@ defmodule ExAws.CodeDeploy do
   """
   @spec create_application(application_name(), compute_platform(), [tag()]) :: ExAws.Operation.JSON.t()
   def create_application(application_name, compute_platform \\ "Server", tags \\ []) do
-    %{"applicationName" => application_name, "computePlatform" => compute_platform, "tags" => build_tags(tags)}
+    %{"applicationName" => application_name, "computePlatform" => compute_platform, "tags" => Utils.build_tags(tags)}
     |> request(:create_application)
   end
 
@@ -554,8 +1063,82 @@ defmodule ExAws.CodeDeploy do
   """
   @spec create_deployment(application_name(), input_create_deployment()) :: ExAws.Operation.JSON.t()
   def create_deployment(application_name, deployment_details \\ %{}) do
-    Map.merge(deployment_details, %{"applicationName" => application_name})
+    deployment_details
+    |> Utils.camelize_map()
+    |> Map.merge(%{"applicationName" => application_name})
     |> request(:create_deployment)
+  end
+
+  @doc """
+  Creates a deployment configuration
+
+  ## Examples
+
+      iex> ExAws.CodeDeploy.create_deployment_config("deploy_config1")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"deploymentConfigName" => "deploy_config1"},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.CreateDeployment"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+
+
+      iex> deployment_config_details = %{minimim_healthy_hosts: %{type: "HOST_COUNT", value: 2}}
+      iex> ExAws.CodeDeploy.create_deployment_config("deploy_config1", deployment_config_details)
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "deploymentConfigName" => "deploy_config1",
+          "minimimHealthyHosts" => %{"type" => "HOST_COUNT", "value" => 2}
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.CreateDeployment"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+  """
+  @spec create_deployment_config(deployment_config_name(), input_create_deployment_config()) :: ExAws.Operation.JSON.t()
+  def create_deployment_config(deployment_config_name, deployment_config_details \\ %{}) do
+    deployment_config_details
+    |> Utils.camelize_map()
+    |> Map.merge(%{"deploymentConfigName" => deployment_config_name})
+    |> request(:create_deployment)
+  end
+
+  @doc """
+  Creates a deployment group to which application revisions are deployed
+  """
+  @spec create_deployment_group(
+          application_name(),
+          deployment_group_name(),
+          service_role_arn(),
+          input_create_deployment_group()
+        ) :: ExAws.Operation.JSON.t()
+  def create_deployment_group(application_name, deployment_group_name, service_role_arn, deployment_group_details) do
+    deployment_group_details
+    |> Utils.camelize_map()
+    |> Map.merge(%{
+      "applicationName" => application_name,
+      "deploymnentGroupName" => deployment_group_name,
+      "serviceRoleArn" => service_role_arn
+    })
+    |> request(:create_deployment_group)
   end
 
   @doc """
@@ -723,7 +1306,7 @@ defmodule ExAws.CodeDeploy do
         data: %{"deploymentId" => "TestDeploy", "instanceIds" => ["i-23324"]},
         params: %{},
         headers: [
-          {"x-amz-target", "CodeDeploy_20141006.BatchSgetDeploymentInstances"},
+          {"x-amz-target", "CodeDeploy_20141006.BatchGetDeploymentInstances"},
           {"content-type", "application/x-amz-json-1.1"}
         ],
         service: :codedeploy,
@@ -734,7 +1317,7 @@ defmodule ExAws.CodeDeploy do
   @spec batch_get_deployment_instances(deployment_id(), [instance_id()]) :: ExAws.Operation.JSON.t()
   def batch_get_deployment_instances(deployment_id, instance_ids) when is_list(instance_ids) do
     %{"deploymentId" => deployment_id, "instanceIds" => instance_ids}
-    |> request(:batch_sget_deployment_instances)
+    |> request(:batch_get_deployment_instances)
   end
 
   @doc """
@@ -1159,12 +1742,6 @@ defmodule ExAws.CodeDeploy do
   end
 
   defp add_auto_rollback(acc, _), do: acc
-
-  defp build_tags(tags) when is_list(tags) do
-    Enum.map(tags, fn {k, v} -> %{"Key" => k, "Value" => v} end)
-  end
-
-  defp build_tags(_tags), do: []
 
   defp request(data, action, opts \\ %{}) do
     operation = Utils.camelize(action, :upper)
