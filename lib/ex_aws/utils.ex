@@ -3,6 +3,17 @@ defmodule ExAws.CodeDeploy.Utils do
   Helper utility functions
   """
 
+  # There are lists that can appear in a Map where the list elements
+  # are Maps and we want to handle capitalization differently. For example,
+  # "ec2TagFilters" is a list where the allowed keys ("Key", "Value" and
+  # "Type") should all use :upper).
+  @special_capitalize_keys %{
+    "ec2TagFilters" => :upper,
+    "tags" => :upper,
+    "onPremisesInstanceTagFilters" => :upper,
+    "ec2TagSet" => :upper
+  }
+
   @doc """
   Camelize an atom or string value
 
@@ -64,7 +75,9 @@ defmodule ExAws.CodeDeploy.Utils do
 
   def camelize_map(a_map, first_word_capitalization) when is_map(a_map) do
     for {key, val} <- a_map, into: %{} do
-      {camelize(key, first_word_capitalization), camelize_map(val, first_word_capitalization)}
+      camelized_key = camelize(key, first_word_capitalization)
+      value_capitalization = Map.get(@special_capitalize_keys, camelized_key, first_word_capitalization)
+      {camelized_key, camelize_map(val, value_capitalization)}
     end
   end
 

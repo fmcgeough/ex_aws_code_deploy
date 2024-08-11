@@ -45,8 +45,8 @@ defmodule ExAws.CodeDeploy do
   @type application_name() :: binary()
 
   @typedoc """
-  The name of a deployment configuration associated with the user or AWS account. Minimum length of
-  1. Maximum length of 100.
+  The name of a deployment configuration associated with the user or AWS account. Minimum length
+  allowed is 1. Maximum length is 100.
   """
   @type deployment_config_name() :: binary()
 
@@ -987,14 +987,13 @@ defmodule ExAws.CodeDeploy do
   @doc """
   For a blue/green deployment, starts the process of rerouting traffic.
 
-  Start the process of rerouting traffic from instances in the original
-  environment to instances in the replacement environment without waiting
-  for a specified wait time to elapse. (Traffic rerouting, which is achieved
-  by registering instances in the replacement environment with the load
+  Start the process of rerouting traffic from instances in the original environment to instances in
+  the replacement environment without waiting for a specified wait time to elapse. (Traffic
+  rerouting, which is achieved by registering instances in the replacement environment with the load
   balancer, can start as soon as all instances have a status of Ready.)
 
-  The `deployment_wait_type` is an optional. If nil is passed in (the default
-  argument) then this value isn't part of the API request.
+  The `deployment_wait_type` is optional. If any value other than "READY_WAIT" or "TERMINATION_WAIT"
+  is provided then it is not sent with the API request.
 
   ## Examples
 
@@ -1113,6 +1112,51 @@ defmodule ExAws.CodeDeploy do
 
   Caller is responsible for defining the deployment_details in a manner that
   matches what Amazon expects. See unit test.
+
+  ## Examples
+
+      iex> deployment_details = %{
+      ...>   deployment_group_name: "dep-01",
+      ...>   auto_rollback_configuration: %{
+      ...>    enabled: true,
+      ...>    events: ["DEPLOYMENT_FAILURE", "DEPLOYMENT_STOP_ON_ALARM"]
+      ...>   },
+      ...>   revision: %{
+      ...>    git_hub_location: %{commit_id: "fa85936EXAMPLEa31736c051f10d77297EXAMPLE",
+      ...>    repository: "my-github-token/my-repository"},
+      ...>    revision_type: "GitHub"
+      ...>   }
+      ...> }
+      iex> ExAws.CodeDeploy.create_deployment("my-app", deployment_details)
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "applicationName" => "my-app",
+          "autoRollbackConfiguration" => %{
+            "enabled" => true,
+            "events" => ["DEPLOYMENT_FAILURE", "DEPLOYMENT_STOP_ON_ALARM"]
+          },
+          "deploymentGroupName" => "dep-01",
+          "revision" => %{
+            "gitHubLocation" => %{
+              "commitId" => "fa85936EXAMPLEa31736c051f10d77297EXAMPLE",
+              "repository" => "my-github-token/my-repository"
+            },
+            "revisionType" => "GitHub"
+          }
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.CreateDeployment"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec create_deployment(application_name(), input_create_deployment()) :: ExAws.Operation.JSON.t()
   def create_deployment(application_name, deployment_details \\ %{}) do
@@ -1176,6 +1220,42 @@ defmodule ExAws.CodeDeploy do
 
   @doc """
   Creates a deployment group to which application revisions are deployed
+
+  ## Examples
+
+      iex> application_name = "WordPress_App"
+      iex> deployment_group_name = "WordPress_DG"
+      iex> service_role_arn = "arn:aws:iam::123456789012:role/CodeDeployDemoRole"
+      iex> deployment_group_details = %{
+      ...>   auto_scaling_groups: ["CodeDeployDemo-ASG"],
+      ...>   deployment_config_name: "CodeDeployDefault.OneAtATime",
+      ...>   ec2_tag_filters: [%{key: "Name", value: "CodeDeployDemo", type: "KEY_AND_VALUE"}]
+      ...> }
+      iex> ExAws.CodeDeploy.create_deployment_group(application_name, deployment_group_name, service_role_arn, deployment_group_details)
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "applicationName" => "WordPress_App",
+          "autoScalingGroups" => ["CodeDeployDemo-ASG"],
+          "deploymentConfigName" => "CodeDeployDefault.OneAtATime",
+          "deploymnentGroupName" => "WordPress_DG",
+          "ec2TagFilters" => [
+            %{"Key" => "Name", "Type" => "KEY_AND_VALUE", "Value" => "CodeDeployDemo"}
+          ],
+          "serviceRoleArn" => "arn:aws:iam::123456789012:role/CodeDeployDemoRole"
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.CreateDeploymentGroup"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec create_deployment_group(
           application_name(),
@@ -1197,8 +1277,8 @@ defmodule ExAws.CodeDeploy do
   @doc """
   Deletes an application.
 
-  application_name: The name of an AWS CodeDeploy application associated with the applicable
-  IAM user or AWS account.
+  application_name: The name of an AWS CodeDeploy application associated with the applicable IAM
+  user or AWS account.
 
   ## Examples
 
@@ -1228,8 +1308,8 @@ defmodule ExAws.CodeDeploy do
   @doc """
   Deletes a deployment configuration.
 
-  A deployment configuration cannot be deleted if it is currently
-  in use. Predefined configurations cannot be deleted.
+  A deployment configuration cannot be deleted if it is currently in use. Predefined configurations
+  cannot be deleted.
 
   ## Examples
 
@@ -1310,6 +1390,38 @@ defmodule ExAws.CodeDeploy do
   def delete_git_hub_account_token(token_name) do
     %{"tokenName" => token_name}
     |> request(:delete_git_hub_account_token)
+  end
+
+  @doc """
+  Deletes resources linked to an external ID. This action only applies if you have configured
+  blue/green deployments through AWS CloudFormation.
+
+  It is not necessary to call this action directly. CloudFormation calls it on your behalf when it
+  needs to delete stack resources. This action is offered publicly in case you need to delete
+  resources to comply with General Data Protection Regulation (GDPR) requirements.
+
+  ## Examples
+
+      iex> ExAws.CodeDeploy.delete_resources_by_external_id("external-12345")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"externalId" => "external-12345"},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.DeleteResourcesByExternalId"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+  """
+  def delete_resources_by_external_id(external_id) do
+    %{"externalId" => external_id}
+    |> request(:delete_resources_by_external_id)
   end
 
   @doc """
