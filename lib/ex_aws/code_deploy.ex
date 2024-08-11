@@ -32,6 +32,7 @@ defmodule ExAws.CodeDeploy do
   # version of the AWS API
   @version "20141006"
   @namespace "CodeDeploy"
+  @valid_deployment_wait_types ["READY_WAIT", "TERMINATION_WAIT"]
 
   @typedoc """
   Name of on-premise instance
@@ -53,6 +54,13 @@ defmodule ExAws.CodeDeploy do
   Each deployment is assigned a unique id
   """
   @type deployment_id() :: binary()
+
+  @typedoc """
+  The status of the deployment's waiting period. "READY_WAIT" indicates that the deployment is ready
+  to start shifting traffic. "TERMINATION_WAIT" indicates that the traffic is shifted, but the
+  original target is not terminated. Valid values: "READY_WAIT" or "TERMINATION_WAIT".
+  """
+  @type deployment_wait_type() :: binary()
 
   @typedoc """
 
@@ -984,10 +992,55 @@ defmodule ExAws.CodeDeploy do
   for a specified wait time to elapse. (Traffic rerouting, which is achieved
   by registering instances in the replacement environment with the load
   balancer, can start as soon as all instances have a status of Ready.)
+
+  The `deployment_wait_type` is an optional. If nil is passed in (the default
+  argument) then this value isn't part of the API request.
+
+  ## Examples
+
+      iex> ExAws.CodeDeploy.continue_deployment("d-1234")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"deploymentId" => "d-1234"},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.ContinueDeployment"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+
+      iex> ExAws.CodeDeploy.continue_deployment("d-1234", "TERMINATION_WAIT")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "deploymentId" => "d-1234",
+          "deploymentWaitType" => "TERMINATION_WAIT"
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.ContinueDeployment"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
-  @spec continue_deployment(deployment_id()) :: ExAws.Operation.JSON.t()
-  def continue_deployment(deployment_id) do
-    %{"deploymentId" => deployment_id}
+  @spec continue_deployment(deployment_id(), nil | deployment_wait_type()) :: ExAws.Operation.JSON.t()
+  def continue_deployment(deployment_id, deployment_wait_type \\ nil) do
+    case deployment_wait_type in @valid_deployment_wait_types do
+      false -> %{"deploymentId" => deployment_id}
+      _ -> %{"deploymentId" => deployment_id, "deploymentWaitType" => deployment_wait_type}
+    end
     |> request(:continue_deployment)
   end
 
