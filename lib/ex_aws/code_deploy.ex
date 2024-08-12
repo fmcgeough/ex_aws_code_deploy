@@ -742,7 +742,7 @@ defmodule ExAws.CodeDeploy do
   @typedoc """
   Optional arguments to the `create_deployment_group/4` function
   """
-  @type input_create_deployment_group() :: %{
+  @type deployment_group_details() :: %{
           optional(:deployment_config_name) => deployment_config_name(),
           optional(:ec2_tag_filters) => [ec2_tag_filter()],
           optional(:on_premises_instance_tag_filters) => [tag_filter_list()],
@@ -880,7 +880,6 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @spec list_applications() :: ExAws.Operation.JSON.t()
   @spec list_applications(paging_options()) :: ExAws.Operation.JSON.t()
   def list_applications(opts \\ []) do
     opts |> Utils.build_paging() |> request(:list_applications)
@@ -1201,7 +1200,7 @@ defmodule ExAws.CodeDeploy do
     organize and categorize them. Each tag consists of a key and an optional value,
     both of which you define.
 
-  ## Examples:
+  ## Examples
 
       iex> ExAws.CodeDeploy.create_application("TestDeploy")
       %ExAws.Operation.JSON{
@@ -1409,7 +1408,7 @@ defmodule ExAws.CodeDeploy do
           application_name(),
           deployment_group_name(),
           service_role_arn(),
-          input_create_deployment_group()
+          deployment_group_details()
         ) :: ExAws.Operation.JSON.t()
   def create_deployment_group(application_name, deployment_group_name, service_role_arn, deployment_group_details) do
     deployment_group_details
@@ -1567,6 +1566,7 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
+  @spec delete_resources_by_external_id(binary()) :: ExAws.Operation.JSON.t()
   def delete_resources_by_external_id(external_id) do
     %{"externalId" => external_id}
     |> request(:delete_resources_by_external_id)
@@ -1824,7 +1824,7 @@ defmodule ExAws.CodeDeploy do
   listed. To list only registered or deregistered on-premises instance names, use the registration
   status parameter.
 
-  ## Examples:
+  ## Examples
 
       iex> opts = %{
       ...>   registration_status: "Registered",
@@ -1980,7 +1980,7 @@ defmodule ExAws.CodeDeploy do
   @doc """
   Gets information about a deployment.
 
-  ## Examples:
+  ## Examples
 
       iex> ExAws.CodeDeploy.get_deployment("deploy_id")
       %ExAws.Operation.JSON{
@@ -2154,7 +2154,7 @@ defmodule ExAws.CodeDeploy do
   @doc """
   Lists the instance for a deployment associated with the applicable IAM user or AWS account.
 
-  ## Examples:
+  ## Examples
 
       iex> ExAws.CodeDeploy.list_deployment_instances("deploy_id")
       %ExAws.Operation.JSON{
@@ -2173,7 +2173,6 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @spec list_deployment_instances(deployment_id()) :: ExAws.Operation.JSON.t()
   @spec list_deployment_instances(deployment_id(), input_list_deployment_instances()) :: ExAws.Operation.JSON.t()
   def list_deployment_instances(deployment_id, opts \\ []) do
     opts
@@ -2211,6 +2210,78 @@ defmodule ExAws.CodeDeploy do
     %{"deploymentId" => deployment_id}
     |> add_auto_rollback(auto_rollback_enabled)
     |> request(:stop_deployment)
+  end
+
+  @doc """
+  Associates the list of tags in the input tags parameter with the resource identified by the
+  resource_arn input parameter
+
+  ## Examples
+
+      iex> resource_arn = "arn:aws:codedeploy:us-west-2:111122223333:application:testApp"
+      iex> tags = [%{key: "Name", value: "testName"}, %{key: "Type", value: "testType"}]
+      iex> ExAws.CodeDeploy.tag_resource(resource_arn, tags)
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "resourceArn" => "arn:aws:codedeploy:us-west-2:111122223333:application:testApp",
+          "tags" => [
+            %{"Key" => "Name", "Value" => "testName"},
+            %{"Key" => "Type", "Value" => "testType"}
+          ]
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.TagResource"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+  """
+  @spec tag_resource(resource_arn(), tags()) :: ExAws.Operation.JSON.t()
+  def tag_resource(resource_arn, tags) when is_list(tags) do
+    %{resource_arn: resource_arn, tags: tags}
+    |> Utils.camelize_map()
+    |> request(:tag_resource)
+  end
+
+  @doc """
+  Disassociates a resource from a list of tags. The resource is identified by the resource_arn input
+  parameter. The tags are identified by the list of keys in the tag_keys input parameter
+
+  ## Example
+
+      iex> resource_arn = "arn:aws:codedeploy:us-west-2:111122223333:application:testApp"
+      iex> tag_keys = ["key1", "key2"]
+      iex> ExAws.CodeDeploy.untag_resource(resource_arn, tag_keys)
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "ResourceArn" => "arn:aws:codedeploy:us-west-2:111122223333:application:testApp",
+          "TagKeys" => [["key1", "key2"]]
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.UntagResource"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+  """
+  @spec untag_resource(resource_arn(), [binary()]) :: ExAws.Operation.JSON.t()
+  def untag_resource(resource_arn, tag_keys) do
+    %{"ResourceArn" => resource_arn, "TagKeys" => [tag_keys]}
+    |> request(:untag_resource)
   end
 
   @doc """
@@ -2376,9 +2447,76 @@ defmodule ExAws.CodeDeploy do
   Changes the name of an application.
   """
   @spec update_application(application_name(), application_name()) :: ExAws.Operation.JSON.t()
-  def(update_application(application_name, new_application_name)) do
+  def update_application(application_name, new_application_name) do
     %{"applicationName" => application_name, "newApplicationName" => new_application_name}
     |> request(:update_application)
+  end
+
+  @doc """
+  Changes information about a deployment group. See `create_deployment_group/4`
+
+  If you do not want to change the service_role_arn pass nil. This will exclude that data from the
+  API call. Passing the current service_role_arn works as well.
+
+  ## Examples
+
+      iex> application_name = "WordPress_App"
+      iex> deployment_group_name = "WordPress_DG"
+      iex> service_role_arn = "arn:aws:iam::123456789012:role/CodeDeployDemoRole"
+      iex> deployment_group_details = %{
+      ...>   auto_scaling_groups: ["CodeDeployDemo-ASG"],
+      ...>   deployment_config_name: "CodeDeployDefault.OneAtATime",
+      ...>   ec2_tag_filters: [%{key: "Name", value: "CodeDeployDemo", type: "KEY_AND_VALUE"}]
+      ...> }
+      iex> ExAws.CodeDeploy.update_deployment_group(application_name, deployment_group_name, service_role_arn, deployment_group_details)
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "applicationName" => "WordPress_App",
+          "autoScalingGroups" => ["CodeDeployDemo-ASG"],
+          "currentDeploymentGroupName" => "WordPress_DG",
+          "deploymentConfigName" => "CodeDeployDefault.OneAtATime",
+          "ec2TagFilters" => [
+            %{"Key" => "Name", "Type" => "KEY_AND_VALUE", "Value" => "CodeDeployDemo"}
+          ],
+          "serviceRoleArn" => "arn:aws:iam::123456789012:role/CodeDeployDemoRole"
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.UpdateDeploymentGroup"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+  """
+  @spec update_deployment_group(
+          application_name(),
+          deployment_group_name(),
+          service_role_arn() | nil,
+          deployment_group_details()
+        ) :: ExAws.Operation.JSON.t()
+  def update_deployment_group(
+        application_name,
+        current_deployment_group_name,
+        service_role_arn \\ nil,
+        deployment_group_details \\ %{}
+      ) do
+    case service_role_arn do
+      nil ->
+        %{}
+
+      _ ->
+        %{service_role_arn: service_role_arn}
+    end
+    |> Map.merge(%{application_name: application_name, current_deployment_group_name: current_deployment_group_name})
+    |> Map.merge(deployment_group_details)
+    |> Utils.camelize_map()
+    |> request(:update_deployment_group)
   end
 
   ####################
