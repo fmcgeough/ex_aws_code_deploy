@@ -68,6 +68,13 @@ defmodule ExAws.CodeDeploy do
   @type instance_id() :: binary()
 
   @typedoc """
+  The ARN of a CodeDeploy resource
+
+  Length Constraints: Minimum length of 1. Maximum length of 1011.
+  """
+  @type resource_arn() :: binary()
+
+  @typedoc """
   The unique IDs of the deployment targets. The compute platform of the deployment determines the
   type of the targets and their formats.
 
@@ -544,6 +551,44 @@ defmodule ExAws.CodeDeploy do
         }
 
   @typedoc """
+  Valid values are "TargetStatus" or "ServerInstanceLabel"
+  """
+  @type target_filter_name() :: binary()
+
+  @typedoc """
+  If the key is "TargetStatus" the string in value list can be "Failed", "InProgress", "Pending", "Ready",
+  "Skipped", "Succeeded", or "Unknown"
+
+  If the key is "ServerInstanceLabel" the value list can be "Blue" or "Green".
+  """
+  @type target_filters() :: %{
+          required(:key) => target_filter_name(),
+          required(:value) => [binary()]
+        }
+
+  @typedoc """
+  Optional parameters for the `list_deployment_targets/1` function
+  """
+  @type input_list_deployment_targets() :: %{
+          optional(:next_token) => binary(),
+          optional(:target_filters) => target_filters()
+        }
+
+  @typedoc """
+  Optional parameters for the `list_tags_for_resource/2` function
+  """
+  @type input_list_tags_for_resource() :: %{
+          optional(:next_token) => binary()
+        }
+
+  @typedoc """
+  Optional parameters to the function `register_application_revision/3`
+  """
+  @type input_register_application_revision() :: %{
+          optional(:description) => binary()
+        }
+
+  @typedoc """
   Optional arguments to the `create_deployment_config/2` function
   """
   @type input_create_deployment_config() :: %{
@@ -551,6 +596,67 @@ defmodule ExAws.CodeDeploy do
           optional(:traffic_routing_config) => traffic_routing_config(),
           optional(:compute_platform) => compute_platform(),
           optional(:zonal_config) => zonal_config()
+        }
+
+  @typedoc """
+  Whether to list revisions based on whether the revision is the target revision of a deployment
+  group. Valid values are "include", "exclude" or "ignore".
+
+  - "include": List revisions that are target revisions of a deployment group.
+  - "exclude": Do not list revisions that are target revisions of a deployment group.
+  - "ignore": List all revisions.
+  """
+  @type list_state_filter_action() :: binary()
+
+  @typedoc """
+  The column name to use to sort the list results. Value values are "registerTime",
+  "firstUsedTime", or "lastUsedTime".
+
+  - "registerTime": Sort by the time the revisions were registered with AWS CodeDeploy.
+  - "firstUsedTime": Sort by the time the revisions were first used in a deployment.
+  - "lastUsedTime": Sort by the time the revisions were last used in a deployment.
+
+  If not specified or set to null, the results are returned in an arbitrary order.
+  """
+  @type application_revision_sort_by() :: binary()
+
+  @typedoc """
+  The order in which to sort the list results. Valid values "ascending" or
+  "descending".
+
+  - "ascending": ascending order.
+  - "descending": descending order.
+  """
+  @type sort_order() :: binary()
+
+  @typedoc """
+  Optional arguments to the `list_application_revisions/2` function
+  """
+  @type input_list_applications_revisions() :: %{
+          optional(:deployed) => list_state_filter_action(),
+          optional(:next_token) => binary(),
+          optional(:s3_bucket) => binary(),
+          optional(:s3_key_prefix) => binary(),
+          optional(:sort_by) => application_revision_sort_by(),
+          optional(:sort_order) => sort_order()
+        }
+
+  @typedoc """
+  The registration status of the on-premises instances. Value values are "Deregistered" or
+  "Registered".
+
+  - "Deregistered": Include deregistered on-premises instances in the resulting list.
+  - "Registered": Include registered on-premises instances in the resulting list.
+  """
+  @type registration_status() :: binary()
+
+  @typedoc """
+  Optional parameters for the function `list_on_premises_instances/1`
+  """
+  @type input_list_on_premises_instances() :: %{
+          optional(:next_token) => binary(),
+          optional(:registration_status) => registration_status(),
+          optional(:tag_filters) => tag_filter_list()
         }
 
   @typedoc """
@@ -692,6 +798,48 @@ defmodule ExAws.CodeDeploy do
               optional(:instance_type_filter) => [binary()],
               optional(:next_token) => binary()
             }
+
+  @doc """
+  Lists information about revisions for an application
+
+  ## Examples
+
+      iex> list_application_revisions = %{
+      ...>   s3_bucket: "CodeDeployDemoBucket",
+      ...>   deployed: "exclude",
+      ...>   sort_by: "lastUsedTime",
+      ...>   sort_order: "descending"
+      ...> }
+      iex> ExAws.CodeDeploy.list_application_revisions("WordPress_App", list_application_revisions)
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "applicationName" => "WordPress_App",
+          "deployed" => "exclude",
+          "s3Bucket" => "CodeDeployDemoBucket",
+          "sortBy" => "lastUsedTime",
+          "sortOrder" => "descending"
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.ListApplicationRevisions"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+  """
+  @spec list_application_revisions(application_name(), input_list_applications_revisions()) :: ExAws.Operation.JSON.t()
+  def list_application_revisions(application_name, list_applications_revisions \\ %{}) do
+    list_applications_revisions
+    |> Utils.camelize_map()
+    |> Map.merge(%{"applicationName" => application_name})
+    |> request(:list_application_revisions)
+  end
 
   @doc """
   Lists the applications registered with the applicable IAM user or AWS account.
@@ -1606,8 +1754,168 @@ defmodule ExAws.CodeDeploy do
       }
   """
   @spec list_deployments(input_list_deployments()) :: ExAws.Operation.JSON.t()
-  def list_deployments(opts \\ []) do
+  def list_deployments(opts \\ %{}) do
     opts |> Utils.keyword_to_map() |> Utils.camelize_map() |> request(:list_deployments)
+  end
+
+  @doc """
+  Returns an array of target IDs that are associated a deployment
+
+      iex> target_filters = %{target_status: ["Failed", "InProgress"]}
+      iex> ExAws.CodeDeploy.list_deployment_targets("d-A1B2C3111", target_filters)
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "deploymentId" => "d-A1B2C3111",
+          "targetStatus" => ["Failed", "InProgress"]
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.ListDeploymentTargets"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+  """
+  @spec list_deployment_targets(deployment_id(), input_list_deployment_targets()) :: ExAws.Operation.JSON.t()
+  def list_deployment_targets(deployment_id, opts \\ %{}) do
+    opts
+    |> Utils.camelize_map()
+    |> Map.merge(%{"deploymentId" => deployment_id})
+    |> request(:list_deployment_targets)
+  end
+
+  @doc """
+  Lists the names of stored connections to GitHub accounts
+
+  ## Examples
+
+      iex> ExAws.CodeDeploy.list_git_hub_account_token_names()
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.ListGitHubAccountTokenNames"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+  """
+  @spec list_git_hub_account_token_names(paging_options()) :: ExAws.Operation.JSON.t()
+  def list_git_hub_account_token_names(opts \\ []) do
+    opts |> Utils.build_paging() |> request(:list_git_hub_account_token_names)
+  end
+
+  @doc """
+  Gets a list of names for one or more on-premises instances.
+
+  Unless otherwise specified, both registered and deregistered on-premises instance names are
+  listed. To list only registered or deregistered on-premises instance names, use the registration
+  status parameter.
+
+  ## Examples:
+
+      iex> opts = %{
+      ...>   registration_status: "Registered",
+      ...>   tag_filters: [%{key: "Name", value: "CodeDeployDemo-OnPrem", type: "KEY_AND_VALUE"}]
+      ...> }
+      iex> ExAws.CodeDeploy.list_on_premises_instances(opts)
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "registrationStatus" => "Registered",
+          "tagFilters" => [
+            %{
+              "Key" => "Name",
+              "Type" => "KEY_AND_VALUE",
+              "Value" => "CodeDeployDemo-OnPrem"
+            }
+          ]
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.ListOnPremisesInstances"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+  """
+  @spec list_on_premises_instances(input_list_on_premises_instances()) :: ExAws.Operation.JSON.t()
+  def list_on_premises_instances(opts \\ %{}) do
+    opts
+    |> Utils.camelize_map()
+    |> request(:list_on_premises_instances)
+  end
+
+  @doc """
+  Returns a list of tags for the resource identified by a specified Amazon Resource Name (ARN). Tags
+  are used to organize and categorize your CodeDeploy resources.
+
+  ## Examples
+
+      iex> resource_arn = "arn:aws:codedeploy:us-west-2:111122223333:application:testApp"
+      iex> ExAws.CodeDeploy.list_tags_for_resource(resource_arn)
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "resourceArn" => "arn:aws:codedeploy:us-west-2:111122223333:application:testApp"
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.ListTagsForResource"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+
+      iex> resource_arn = "arn:aws:codedeploy:us-west-2:111122223333:application:testApp"
+      iex> ExAws.CodeDeploy.list_tags_for_resource(resource_arn, %{next_token: "abcd123EXAMPLE"})
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "nextToken" => "abcd123EXAMPLE",
+          "resourceArn" => "arn:aws:codedeploy:us-west-2:111122223333:application:testApp"
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.ListTagsForResource"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+  """
+  @spec list_tags_for_resource(resource_arn(), input_list_tags_for_resource()) :: ExAws.Operation.JSON.t()
+  def list_tags_for_resource(resource_arn, opts \\ %{}) do
+    opts
+    |> Utils.camelize_map()
+    |> Map.merge(%{"resourceArn" => resource_arn})
+    |> request(:list_tags_for_resource)
   end
 
   @doc """
@@ -1698,7 +2006,26 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
-  Gets information about a deployment configuration.
+  Gets information about a deployment configuration. See `create_deployment/2`
+
+  ## Examples
+
+      iex> ExAws.CodeDeploy.get_deployment_config("deploy-config")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"deploymentConfigName" => "deploy-config"},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.GetDeploymentConfig"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec get_deployment_config(deployment_config_name()) :: ExAws.Operation.JSON.t()
   def get_deployment_config(deployment_config_name) do
@@ -1769,7 +2096,54 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
+  Returns information about a deployment target
+
+  ## Examples
+
+      iex> ExAws.CodeDeploy.get_deployment_target("d-7539MBT7C", "i-49663TARGET")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"deploymentId" => "d-7539MBT7C", "targetId" => "i-49663TARGET"},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.GetDeploymentTarget"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+  """
+  @spec get_deployment_target(deployment_id(), target_id()) :: ExAws.Operation.JSON.t()
+  def get_deployment_target(deployment_id, target_id) do
+    %{"deploymentId" => deployment_id, "targetId" => target_id}
+    |> request(:get_deployment_target)
+  end
+
+  @doc """
   Gets information about an on-premises instance
+
+  ## Examples
+
+      iex> ExAws.CodeDeploy.get_on_premises_instance("AssetTag12010298EX")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"instanceName" => "AssetTag12010298EX"},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.GetOnPremisesInstance"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
   """
   @spec get_on_premises_instance(instance_name()) :: ExAws.Operation.JSON.t()
   def get_on_premises_instance(instance_name) do
@@ -1854,6 +2228,51 @@ defmodule ExAws.CodeDeploy do
   end
 
   @doc """
+  Registers with AWS CodeDeploy a revision for the specified application
+
+  ## Examples
+
+      iex> application_name = "WordPress_App"
+      iex> revision_location = %{s3_location: %{bucket: "CodeDeployDemoBucket", key: "RevisedWordPressApp.zip", bundle_type: "zip", e_tag: "cecc9b8a08eac650a6e71fdb88EXAMPLE"}}
+      iex> opts = %{description: "Revised WordPress application"}
+      iex> ExAws.CodeDeploy.register_application_revision(application_name, revision_location, opts)
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "applicationName" => "WordPress_App",
+          "description" => "Revised WordPress application",
+          "revisionLocation" => %{
+            "s3Location" => %{
+              "bucket" => "CodeDeployDemoBucket",
+              "bundleType" => "zip",
+              "eTag" => "cecc9b8a08eac650a6e71fdb88EXAMPLE",
+              "key" => "RevisedWordPressApp.zip"
+            }
+          }
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.RegisterApplicationRevision"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+  """
+  @spec register_application_revision(application_name(), revision_location(), input_register_application_revision()) ::
+          ExAws.Operation.JSON.t()
+  def register_application_revision(application_name, revision_location, opts \\ %{}) do
+    opts
+    |> Map.merge(%{application_name: application_name, revision_location: revision_location})
+    |> Utils.camelize_map()
+    |> request(:register_application_revision)
+  end
+
+  @doc """
   Registers an on-premises instance.
 
   Only one IAM ARN (an IAM session ARN or IAM user ARN) is supported in the request. You cannot use
@@ -1888,6 +2307,69 @@ defmodule ExAws.CodeDeploy do
     |> Utils.camelize_map()
     |> Map.merge(%{"instanceName" => instance_name})
     |> request(:register_on_premises_instance)
+  end
+
+  @doc """
+  Removes one or more tags from one or more on-premises instances
+
+  ## Examples
+
+      iex> instance_names = ["AssetTag12010298EX", "AssetTag23121309EX"]
+      iex> tags = [%{key: "Name", value: "CodeDeployDemo-OnPrem"}]
+      iex> ExAws.CodeDeploy.remove_tags_from_on_premises_instances(instance_names, tags)
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{
+          "instanceNames" => ["AssetTag12010298EX", "AssetTag23121309EX"],
+          "tags" => [%{"Key" => "Name", "Value" => "CodeDeployDemo-OnPrem"}]
+        },
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.RemoveTagsFromOnPremisesInstances"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+  """
+  @spec remove_tags_from_on_premises_instances([instance_name()], tags()) :: ExAws.Operation.JSON.t()
+  def remove_tags_from_on_premises_instances(instance_names, tags) when is_list(instance_names) and is_list(tags) do
+    %{instance_names: instance_names, tags: tags}
+    |> Utils.camelize_map()
+    |> request(:remove_tags_from_on_premises_instances)
+  end
+
+  @doc """
+  In a blue/green deployment, overrides any specified wait time and starts terminating instances
+  immediately after the traffic routing is complete
+
+  ## Examples
+
+      iex> ExAws.CodeDeploy.skip_wait_time_for_instance_termination("d-UBCT41FSL")
+      %ExAws.Operation.JSON{
+        stream_builder: nil,
+        http_method: :post,
+        parser: &Function.identity/1,
+        error_parser: &Function.identity/1,
+        path: "/",
+        data: %{"deploymentId" => "d-UBCT41FSL"},
+        params: %{},
+        headers: [
+          {"x-amz-target", "CodeDeploy_20141006.SkipWaitTimeForInstanceTermination"},
+          {"content-type", "application/x-amz-json-1.1"}
+        ],
+        service: :codedeploy,
+        before_request: nil
+      }
+  """
+  @spec skip_wait_time_for_instance_termination(deployment_id()) :: ExAws.Operation.JSON.t()
+  def skip_wait_time_for_instance_termination(deployment_id) do
+    %{"deploymentId" => deployment_id}
+    |> request(:skip_wait_time_for_instance_termination)
   end
 
   @doc """

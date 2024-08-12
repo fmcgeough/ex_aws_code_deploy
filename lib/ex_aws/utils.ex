@@ -9,11 +9,13 @@ defmodule ExAws.CodeDeploy.Utils do
   # "Type") should all use :upper).
   @special_capitalize_keys %{
     "ec2TagFilters" => :upper,
+    "tagFilters" => :upper,
     "tags" => :upper,
     "onPremisesInstanceTagFilters" => :upper,
     "ec2TagSet" => :upper
   }
 
+  @spec camelize(atom() | binary(), any()) :: binary()
   @doc """
   Camelize an atom or string value
 
