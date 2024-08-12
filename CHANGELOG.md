@@ -1,6 +1,7 @@
-v2.0.1
+v2.1.0
 ------
 #### Enhancements
+  - Missing functions that are part of the API are added
   - Use Github Workflows to test with multiple Elixir versions, credo, dialyzer
   - Update dependencies
   - More doctests

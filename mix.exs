@@ -2,7 +2,7 @@ defmodule ExAwsCodeDeploy.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/fmcgeough/ex_aws_code_deploy"
-  @version "2.0.1"
+  @version "2.1.0"
 
   def project do
     [
