@@ -131,13 +131,27 @@ defmodule ExAws.CodeDeploy do
   @typedoc """
   Information about a tag.
 
-  - key - the tag's key
-  - value - the tag's value
+  - key - the value contains the tag's key
+  - value - the value contains the tag's value
   """
   @type tag :: %{
           optional(:key) => binary(),
           optional(:value) => binary()
         }
+
+  @typedoc """
+  In order to provide backward compatability the type `t:primitive_tag/0` is available. With this
+  type a tag consists of a 2-element tuple where the key is the first element and the value is the
+  second. The new `t:tag/0` type provides greater flexibilty and is preferred. This type can only be
+  passed for the functions `create_application/3` and `add_tags_to_on_premises_instances/2`.
+
+  ## Example
+
+  ```
+  primitive_tag = {"my_key", "my_value"}
+  ```
+  """
+  @type primitive_tag :: {binary(), binary()}
 
   @typedoc """
   A list of tags
@@ -940,7 +954,7 @@ defmodule ExAws.CodeDeploy do
         before_request: nil
       }
   """
-  @spec add_tags_to_on_premises_instances([instance_name()], [tag()]) :: ExAws.Operation.JSON.t()
+  @spec add_tags_to_on_premises_instances([instance_name()], [tag()] | [primitive_tag()]) :: ExAws.Operation.JSON.t()
   def add_tags_to_on_premises_instances(instance_names, tags) when is_list(instance_names) and is_list(tags) do
     api_tags = Utils.build_tags(tags)
 
