@@ -114,24 +114,24 @@ defmodule ExAws.CodeDeploy.UtilsTest do
     end
   end
 
-  describe "build_tags/1" do
+  describe "normalize_tags/1" do
     test "no tags gives empty list" do
-      assert [] == Utils.build_tags([])
+      assert [] == Utils.normalize_tags([])
     end
 
     test "single valid tag works" do
-      expected_val = [%{"Key" => "my_key", "Value" => "my_value"}]
-      assert expected_val == Utils.build_tags([{"my_key", "my_value"}])
+      expected_val = [%{key: "my_key", value: "my_value"}]
+      assert expected_val == Utils.normalize_tags([{"my_key", "my_value"}])
     end
 
     test "multiple valid tags works" do
-      expected_val = [%{"Key" => "my_key", "Value" => "my_value"}, %{"Key" => "my_key2", "Value" => "my_value2"}]
-      assert expected_val == Utils.build_tags([{"my_key", "my_value"}, {"my_key2", "my_value2"}])
+      expected_val = [%{key: "my_key", value: "my_value"}, %{key: "my_key2", value: "my_value2"}]
+      assert expected_val == Utils.normalize_tags([{"my_key", "my_value"}, {"my_key2", "my_value2"}])
     end
 
     test "invalid tags are skipped" do
-      expected_val = [%{"Key" => "my_key", "Value" => "my_value"}, %{"Key" => "my_key2", "Value" => "my_value2"}]
-      assert expected_val == Utils.build_tags([{"my_key", "my_value"}, {}, {"my_key2", "my_value2"}])
+      expected_val = [%{key: "my_key", value: "my_value"}, %{key: "my_key2", value: "my_value2"}]
+      assert expected_val == Utils.normalize_tags([{"my_key", "my_value"}, {}, {"my_key2", "my_value2"}])
     end
   end
 end

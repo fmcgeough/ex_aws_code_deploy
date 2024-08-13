@@ -12,7 +12,9 @@ defmodule ExAws.CodeDeploy.Utils do
     "tagFilters" => :upper,
     "tags" => :upper,
     "onPremisesInstanceTagFilters" => :upper,
-    "ec2TagSet" => :upper
+    "ec2TagSet" => :upper,
+    target_status: :upper,
+    service_instance_label: :upper
   }
 
   @spec camelize(atom() | binary(), any()) :: binary()
@@ -77,7 +79,7 @@ defmodule ExAws.CodeDeploy.Utils do
 
   def camelize_map(a_map, first_word_capitalization) when is_map(a_map) do
     for {key, val} <- a_map, into: %{} do
-      camelized_key = camelize(key, first_word_capitalization)
+      camelized_key = camelize(key, Map.get(@special_capitalize_keys, key, first_word_capitalization))
       value_capitalization = Map.get(@special_capitalize_keys, camelized_key, first_word_capitalization)
       {camelized_key, camelize_map(val, value_capitalization)}
     end
@@ -173,34 +175,32 @@ defmodule ExAws.CodeDeploy.Utils do
 
   @doc """
   Take a list of tag and convert it into a format suitable for
-  API. Invalid tags are skipped. The code is forgiving of input.
-  Elements in list can be a Map with "Key" and "Value"
-  of key and value or a list where each element
+  API.
 
   ## Examples
 
-      iex> ExAws.CodeDeploy.Utils.build_tags([])
+      iex> ExAws.CodeDeploy.Utils.normalize_tags([])
       []
 
-      iex> ExAws.CodeDeploy.Utils.build_tags([{:my_key, "value1"}])
-      [%{"Key" => "my_key", "Value" => "value1"}]
+      iex> ExAws.CodeDeploy.Utils.normalize_tags([{"my_key", "value1"}])
+      [%{key: "my_key", value: "value1"}]
   """
-  def build_tags(tags) when is_list(tags) do
-    tags
-    |> Enum.map(fn tag ->
-      case tag do
-        {k, v} when is_atom(k) or (is_binary(k) and is_binary(v)) ->
-          %{"Key" => to_string(k), "Value" => v}
-
-        %{"Key" => k, "Value" => v} when is_atom(k) or (is_binary(k) and is_binary(v)) ->
-          %{"Key" => to_string(k), "Value" => v}
-
-        _ ->
-          nil
-      end
-    end)
-    |> Enum.filter(&(&1 != nil))
+  def normalize_tags(tags) when is_list(tags) do
+    do_normalize_tags(tags, [])
   end
 
-  def build_tags(_tags), do: []
+  def normalize_tags(_tags), do: []
+
+  defp do_normalize_tags([], acc), do: Enum.reverse(acc)
+
+  defp do_normalize_tags([h | t], acc) do
+    if is_map(h) do
+      do_normalize_tags(t, [h | acc])
+    else
+      case h do
+        {key_name, value} -> do_normalize_tags(t, [%{key: key_name, value: value} | acc])
+        _ -> do_normalize_tags(t, acc)
+      end
+    end
+  end
 end
