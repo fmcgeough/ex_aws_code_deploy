@@ -1309,37 +1309,10 @@ defmodule ExAws.CodeDeploy do
         service: :codedeploy,
         before_request: nil
       }
-
-      iex> tags = [{"key1", "value"}, {"key2", "value"}]
-      iex> instances = ["i-1234", "i-59922"]
-      iex> ExAws.CodeDeploy.add_tags_to_on_premises_instances(instances, tags)
-      %ExAws.Operation.JSON{
-        stream_builder: nil,
-        http_method: :post,
-        parser: &Function.identity/1,
-        error_parser: &Function.identity/1,
-        path: "/",
-        data: %{
-          "instanceNames" => ["i-1234", "i-59922"],
-          "tags" => [
-            %{"Key" => "key1", "Value" => "value"},
-            %{"Key" => "key2", "Value" => "value"}
-          ]
-        },
-        params: %{},
-        headers: [
-          {"x-amz-target", "CodeDeploy_20141006.AddTagsToOnPremisesInstances"},
-          {"content-type", "application/x-amz-json-1.1"}
-        ],
-        service: :codedeploy,
-        before_request: nil
-      }
   """
   @spec add_tags_to_on_premises_instances([instance_name()], [tag()] | [primitive_tag()]) :: ExAws.Operation.JSON.t()
   def add_tags_to_on_premises_instances(instance_names, tags) when is_list(instance_names) and is_list(tags) do
-    api_tags = Utils.normalize_tags(tags)
-
-    %{instance_names: instance_names, tags: api_tags}
+    %{instance_names: instance_names, tags: Utils.normalize_tags(tags)}
     |> Utils.camelize_map()
     |> request(:add_tags_to_on_premises_instances)
   end
