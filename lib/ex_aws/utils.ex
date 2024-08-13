@@ -13,8 +13,7 @@ defmodule ExAws.CodeDeploy.Utils do
     "tags" => :upper,
     "onPremisesInstanceTagFilters" => :upper,
     "ec2TagSet" => :upper,
-    target_status: :upper,
-    service_instance_label: :upper
+    "targetFilters" => :upper
   }
 
   @spec camelize(atom() | binary(), any()) :: binary()
@@ -79,7 +78,7 @@ defmodule ExAws.CodeDeploy.Utils do
 
   def camelize_map(a_map, first_word_capitalization) when is_map(a_map) do
     for {key, val} <- a_map, into: %{} do
-      camelized_key = camelize(key, Map.get(@special_capitalize_keys, key, first_word_capitalization))
+      camelized_key = camelize(key, first_word_capitalization)
       value_capitalization = Map.get(@special_capitalize_keys, camelized_key, first_word_capitalization)
       {camelized_key, camelize_map(val, value_capitalization)}
     end

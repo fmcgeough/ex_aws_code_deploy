@@ -222,7 +222,7 @@ defmodule ExAws.CodeDeploy do
   groups in the list
   """
   @type on_premises_tag_set() :: %{
-          on_premises_tag_set_list: [tag_filter()]
+          optional(:on_premises_tag_set_list) => [tag_filter()]
         }
 
   @typedoc """
@@ -756,57 +756,48 @@ defmodule ExAws.CodeDeploy do
         }
 
   @typedoc """
-  For `list_deployment_targets/1` a target filter can be used. This
-  is a map where the key is one of the two strings below. The values
-  allowed by each key are defined in `t:target_filter_string/0`.
+  A filter value used to filter deployment targets by current target status
 
-  Valid values
-  ```
-  [:target_status, :service_instance_label]
-  ```
-  """
-  @type target_filter_key() :: binary()
-
-  @typedoc """
-  The filter value used to filter deployment targets. These values appear
-  in a `t:target_filters/0`.
-
-  - :target_status
   Valid Values
+
   ```
   ["Failed", "InProgress", "Pending", "Ready", "Skipped", "Succeeded", "Unknown"]
   ```
+  """
+  @type target_status_values() :: binary()
 
-  - :service_instance_label
+  @typedoc """
+  A filter value used to filter deployment targets based on current label
+
   Valid Values
+
   ```
   ["Blue", "Green"`]
   ```
   """
-  @type target_filter_string() :: binary()
+  @type service_instance_label_values() :: binary()
 
   @typedoc """
-  A key used to filter the returned targets.
+  Filter used with `list_deployment_targets/1`
 
-  ## Examples
-
-  ```
-  filters = %{target_status: ["Failed", "InProgress"]}
-  ```
-
+  - target_status - filter deployment targets by current target status
+  - service_instance_label - filter deployment targets based on current label
   """
-  @type target_filters() :: [target_filter_string()]
+  @type target_filters() :: %{
+          optional(:target_status) => [target_status_values()],
+          optional(:service_instance_label) => [service_instance_label_values()]
+        }
 
   @typedoc """
   Optional parameters for the `list_deployment_targets/1` function
 
   - next_token - A token identifier returned from the previous `list_deployment_targets/1` call. It
     can be used to return the next set of deployment targets in the list.
-  - target_filters -  A key used to filter the returned targets.
+  - target_filters - A key used to filter the returned targets.
   """
   @type list_deployment_targets_optional_details() :: %{
           optional(:next_token) => binary(),
-          optional(target_filter_key()) => target_filters()
+          optional(:target_filters) => target_filters()
         }
 
   @typedoc """
@@ -2168,7 +2159,7 @@ defmodule ExAws.CodeDeploy do
   @doc """
   Returns an array of target IDs that are associated a deployment
 
-      iex> target_filters = %{target_status: ["Failed", "InProgress"]}
+      iex> target_filters = %{target_filters: %{target_status: ["Failed", "InProgress"]}}
       iex> ExAws.CodeDeploy.list_deployment_targets("d-A1B2C3111", target_filters)
       %ExAws.Operation.JSON{
         stream_builder: nil,
@@ -2178,7 +2169,7 @@ defmodule ExAws.CodeDeploy do
         path: "/",
         data: %{
           "deploymentId" => "d-A1B2C3111",
-          "TargetStatus" => ["Failed", "InProgress"]
+          "targetFilters" => %{"TargetStatus" => ["Failed", "InProgress"]}
         },
         params: %{},
         headers: [
