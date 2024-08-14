@@ -1,5 +1,7 @@
 defmodule ExAwsCodeDeployTest do
+  @moduledoc false
   use ExUnit.Case
+
   doctest ExAws.CodeDeploy
   alias ExAws.CodeDeploy
 
