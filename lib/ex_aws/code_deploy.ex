@@ -1277,11 +1277,14 @@ defmodule ExAws.CodeDeploy do
   """
   @spec list_applications(paging_options()) :: ExAws.Operation.JSON.t()
   def list_applications(opts \\ []) do
-    opts |> Utils.build_paging() |> request(:list_applications)
+    opts |> Utils.normalize_paging() |> Utils.camelize_map() |> request(:list_applications)
   end
 
   @doc """
   Adds tags to on-premises instances.
+
+  _Note: although tags can be specified using `t:primitive_tag/0` it's preferred to use the
+  `t:tag/0` syntax_.
 
   ## Examples
 
@@ -2056,7 +2059,7 @@ defmodule ExAws.CodeDeploy do
   """
   @spec list_deployment_configs(paging_options()) :: ExAws.Operation.JSON.t()
   def list_deployment_configs(opts \\ []) do
-    opts |> Utils.build_paging() |> request(:list_deployment_configs)
+    opts |> Utils.normalize_paging() |> Utils.camelize_map() |> request(:list_deployment_configs)
   end
 
   @doc """
@@ -2094,8 +2097,9 @@ defmodule ExAws.CodeDeploy do
   @spec list_deployment_groups(application_name(), paging_options()) :: ExAws.Operation.JSON.t()
   def list_deployment_groups(application_name, opts \\ []) do
     opts
-    |> Utils.build_paging()
-    |> Map.merge(%{"applicationName" => application_name})
+    |> Utils.normalize_paging()
+    |> Map.merge(%{application_name: application_name})
+    |> Utils.camelize_map()
     |> request(:list_deployment_groups)
   end
 
@@ -2185,7 +2189,7 @@ defmodule ExAws.CodeDeploy do
   """
   @spec list_git_hub_account_token_names(paging_options()) :: ExAws.Operation.JSON.t()
   def list_git_hub_account_token_names(opts \\ []) do
-    opts |> Utils.build_paging() |> request(:list_git_hub_account_token_names)
+    opts |> Utils.normalize_paging() |> Utils.camelize_map() |> request(:list_git_hub_account_token_names)
   end
 
   @doc """

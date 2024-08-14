@@ -34,7 +34,8 @@ defmodule ExAws.CodeDeploy.Utils do
   @doc """
   Return the default camelize rules
 
-  A caller can override this
+  A caller can override this by creating a `t:camelize_rules/0` and passing
+  it into functions instead of the default.
   """
   @spec camelize_rules() :: camelize_rules()
   def camelize_rules, do: @camelize_rules
@@ -137,68 +138,50 @@ defmodule ExAws.CodeDeploy.Utils do
   end
 
   @doc """
-  Camelize a list
-
-  The caller can pass in an argument to indicate whether the first letter of the first element in
-  the list is downcased or capitalized. The remainder elements are always capitalized.
+  Take the various forms of allowed paging options and create a
+  `%{next_token: val}`
 
   ## Examples
 
-      iex> ExAws.CodeDeploy.Utils.camelize_split_string([], :lower)
-      []
-
-      iex> ExAws.CodeDeploy.Utils.camelize_split_string(["a", "cat"], :lower)
-      ["a", "Cat"]
-
-      iex> ExAws.CodeDeploy.Utils.camelize_split_string(["a", "cat"], :upper)
-      ["A", "Cat"]
-  """
-  def camelize_split_string(val, default \\ :lower)
-  def camelize_split_string([], _), do: []
-
-  def camelize_split_string([h | t], :lower) do
-    [String.downcase(h)] ++ camelize_split_string(t, :upper)
-  end
-
-  def camelize_split_string([h | t], :upper) do
-    [String.capitalize(h)] ++ camelize_split_string(t, :upper)
-  end
-
-  @doc """
-  Handle building a nextToken element for paging
-
-  ## Examples
-
-      iex> ExAws.CodeDeploy.Utils.build_paging([])
+      # Passing an unexpected value (no paging found) returns an empty map
+      iex> ExAws.CodeDeploy.Utils.normalize_paging([])
       %{}
 
-      iex> ExAws.CodeDeploy.Utils.build_paging([{:next_token, "123"}])
-      %{"nextToken" => "123"}
+      # Different approaches to defining Keyword list work
+      iex> ExAws.CodeDeploy.Utils.normalize_paging([{:next_token, "123"}])
+      %{next_token: "123"}
 
-      iex> ExAws.CodeDeploy.Utils.build_paging({:next_token, "123"})
-      %{"nextToken" => "123"}
+      iex> ExAws.CodeDeploy.Utils.normalize_paging([next_token: "123"])
+      %{next_token: "123"}
 
-      iex> ExAws.CodeDeploy.Utils.build_paging(%{next_token: "123"})
-      %{"nextToken" => "123"}
+      # Pass a tuple, no list
+      iex> ExAws.CodeDeploy.Utils.normalize_paging({:next_token, "123"})
+      %{next_token: "123"}
+
+      # Pass in data already formatted, returns the same data
+      iex> ExAws.CodeDeploy.Utils.normalize_paging(%{next_token: "123"})
+      %{next_token:  "123"}
   """
-  def build_paging(opts) when is_list(opts) do
+  def normalize_paging(opts) when is_list(opts) do
     case Keyword.get(opts, :next_token) do
-      val when is_binary(val) -> %{"nextToken" => val}
+      val when is_binary(val) -> %{next_token: val}
       _ -> %{}
     end
   end
 
-  def build_paging(opts) when is_map(opts) do
-    camelize_map(opts)
+  def normalize_paging({:next_token, val}) do
+    %{next_token: val}
   end
 
-  def build_paging(opts) do
-    build_paging([opts])
+  def normalize_paging(%{next_token: _val} = paging) do
+    paging
   end
+
+  def normalize_paging(_val), do: %{}
 
   @doc """
-  Take a list of tag and convert it into a format suitable for
-  API.
+  Take a list of tag and convert it into a list where each elemet
+  is a map with atom keys.
 
   ## Examples
 
@@ -232,4 +215,29 @@ defmodule ExAws.CodeDeploy.Utils do
   end
 
   defp camelization_for_val(_val, %{default: default}), do: default
+
+  # Camelize a word that has been split into parts
+  #
+  # The caller can pass in an argument to indicate whether the first letter of the first element in
+  # the list is downcased or capitalized. The remainder elements are always capitalized.
+  #
+  # ## Examples
+  #
+  #     iex> ExAws.CodeDeploy.Utils.camelize_split_string([], :lower)
+  #     []
+  #
+  #     iex> ExAws.CodeDeploy.Utils.camelize_split_string(["a", "cat"], :lower)
+  #     ["a", "Cat"]
+  #
+  #     iex> ExAws.CodeDeploy.Utils.camelize_split_string(["a", "cat"], :upper)
+  #     ["A", "Cat"]
+  defp camelize_split_string([], _), do: []
+
+  defp camelize_split_string([h | t], :lower) do
+    [String.downcase(h)] ++ camelize_split_string(t, :upper)
+  end
+
+  defp camelize_split_string([h | t], :upper) do
+    [String.capitalize(h)] ++ camelize_split_string(t, :upper)
+  end
 end

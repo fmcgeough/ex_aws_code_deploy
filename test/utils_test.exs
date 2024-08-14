@@ -84,21 +84,21 @@ defmodule ExAws.CodeDeploy.UtilsTest do
   end
 
   # the library accepts a variety of input for paging argument
-  describe "build_paging/1" do
+  describe "normalize_paging/1" do
     test "empty list" do
-      assert %{} == Utils.build_paging([])
+      assert %{} == Utils.normalize_paging([])
     end
 
     test "keyword" do
-      assert %{"nextToken" => "test"} = Utils.build_paging([{:next_token, "test"}])
+      assert %{next_token: "test"} == Utils.normalize_paging([{:next_token, "test"}])
     end
 
     test "map" do
-      assert %{"nextToken" => "test"} = Utils.build_paging(%{next_token: "test"})
+      assert %{next_token: "test"} == Utils.normalize_paging(%{next_token: "test"})
     end
 
     test "raw tuple" do
-      assert %{"nextToken" => "test"} = Utils.build_paging({:next_token, "test"})
+      assert %{next_token: "test"} == Utils.normalize_paging({:next_token, "test"})
     end
   end
 
