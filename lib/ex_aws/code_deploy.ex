@@ -7,14 +7,14 @@ defmodule ExAws.CodeDeploy do
   definitive source of information and should be consulted to understand how to use CodeDeploy and
   its API functions.
 
-  Generally the functions that wrap the API take required parameters as separate unique arguments
-  and any optional arguments are passed as a Map (with a defined type).
+  Generally the functions take required parameters separately from any optional arguments. The
+  optional arguments are passed as a Map (with a defined type).
 
-  For the API's that take a structure the types are defined using the standard Elixir snake-case.
-  The API itself uses camel-case. For camel-case most API keys use a lower-case letter for the first
-  word and upper-case for the subsequent words. However, there are exceptions to this rule. The
-  exceptions are handled by the library so an Elixir developer can just use standard snake-case for
-  all the keys.
+  The defined types for the Maps used to pass optional arguments use the standard Elixir snake-case
+  for keys. The API itself uses camel-case Strings for keys. The library provides the conversion.
+  Most of the API keys use a lower-case letter for the first word and upper-case for the subsequent
+  words. There are exceptions to this rule. The exceptions are handled by the library so an Elixir
+  developer can just use standard snake-case for all the keys.
 
   ## Description
 
@@ -333,7 +333,8 @@ defmodule ExAws.CodeDeploy do
         }
 
   @typedoc """
-  The method used to add instances to a replacement environment.
+  The `action` key in the `t:green_fleet_provisioning_option/0` has a value
+  that defines information about instances in the replacement environment
 
   Valid Values
   ```
