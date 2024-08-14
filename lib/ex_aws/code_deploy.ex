@@ -1285,7 +1285,7 @@ defmodule ExAws.CodeDeploy do
 
   ## Examples
 
-      iex> tags = [%{"Key" => "key1", "Value" => "value"}, %{"Key" => "key2", "Value" => "value"}]
+      iex> tags = [%{key: "key1", value: "value"}, %{key: "key2", value: "value"}]
       iex> instances = ["i-1234", "i-59922"]
       iex> ExAws.CodeDeploy.add_tags_to_on_premises_instances(instances, tags)
       %ExAws.Operation.JSON{
@@ -2600,11 +2600,11 @@ defmodule ExAws.CodeDeploy do
         error_parser: &Function.identity/1,
         path: "/",
         data: %{
-          "resourceArn" => "arn:aws:codedeploy:us-west-2:111122223333:application:testApp",
-          "tags" => [
+          "Tags" => [
             %{"Key" => "Name", "Value" => "testName"},
             %{"Key" => "Type", "Value" => "testType"}
-          ]
+          ],
+          "resourceArn" => "arn:aws:codedeploy:us-west-2:111122223333:application:testApp"
         },
         params: %{},
         headers: [
@@ -2617,8 +2617,10 @@ defmodule ExAws.CodeDeploy do
   """
   @spec tag_resource(resource_arn(), tags()) :: ExAws.Operation.JSON.t()
   def tag_resource(resource_arn, tags) when is_list(tags) do
+    camelize_rules = Map.put(Utils.camelize_rules(), :keys, %{tags: :upper})
+
     %{resource_arn: resource_arn, tags: tags}
-    |> Utils.camelize_map()
+    |> Utils.camelize_map(camelize_rules)
     |> request(:tag_resource)
   end
 
@@ -2905,7 +2907,7 @@ defmodule ExAws.CodeDeploy do
   defp add_auto_rollback(acc, _), do: acc
 
   defp request(data, action, opts \\ %{}) do
-    operation = Utils.camelize(action, :upper)
+    operation = Utils.camelize(action, %{default: :upper})
 
     ExAwsOperationJSON.new(
       :codedeploy,
